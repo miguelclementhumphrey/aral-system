@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "aral_system_secret_key_2024";
+const JWT_SECRET = process.env.JWT_SECRET ?? "aral_system_secret_key_2024";
 const JWT_EXPIRES_IN = "7d";
 
 export interface JwtPayload {

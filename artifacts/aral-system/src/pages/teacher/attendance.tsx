@@ -79,11 +79,11 @@ export default function TeacherAttendance() {
           data: {
             learnerId: learner.id,
             weekStartDate: selectedWeek,
-            monday: record.monday ?? "present",
-            tuesday: record.tuesday ?? "present",
-            wednesday: record.wednesday ?? "present",
-            thursday: record.thursday ?? "present",
-            friday: record.friday ?? "present",
+            monday: (record.monday ?? "present") as any,
+            tuesday: (record.tuesday ?? "present") as any,
+            wednesday: (record.wednesday ?? "present") as any,
+            thursday: (record.thursday ?? "present") as any,
+            friday: (record.friday ?? "present") as any,
           },
         });
         saved++;

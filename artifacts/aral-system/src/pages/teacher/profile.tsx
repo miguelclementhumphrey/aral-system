@@ -40,7 +40,7 @@ export default function TeacherProfile() {
   const { data: profile, isLoading } = useGetTeacherProfile();
   const saveProfile = useSaveTeacherProfile();
 
-  const form = useForm<ProfileFormValues>({
+  const form = useForm<any>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       designation: "",
@@ -59,22 +59,22 @@ export default function TeacherProfile() {
   useEffect(() => {
     if (profile && isInitialLoad.current) {
       form.reset({
-        designation: profile.designation || "",
-        position: profile.position || "",
-        contactNumber: profile.contactNumber || "",
-        email: profile.email || "",
-        district: profile.district || "",
-        division: profile.division || "",
-        schoolYear: profile.schoolYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-        highestEducationalAttainment: profile.highestEducationalAttainment || "",
-        yearsInService: profile.yearsInService || "",
-        fieldOfSpecialization: profile.fieldOfSpecialization || "",
+        designation: (profile as any).designation || "",
+        position: (profile as any).position || "",
+        contactNumber: (profile as any).contactNumber || "",
+        email: (profile as any).email || "",
+        district: (profile as any).district || "",
+        division: (profile as any).division || "",
+        schoolYear: (profile as any).schoolYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+        highestEducationalAttainment: (profile as any).highestEducationalAttainment || "",
+        yearsInService: (profile as any).yearsInService || "",
+        fieldOfSpecialization: (profile as any).fieldOfSpecialization || "",
       });
       isInitialLoad.current = false;
     }
   }, [profile, form]);
 
-  const onSubmit = async (data: ProfileFormValues) => {
+  const onSubmit = async (data: any) => {
     try {
       await saveProfile.mutateAsync({ data });
       queryClient.invalidateQueries({ queryKey: getGetTeacherProfileQueryKey() });

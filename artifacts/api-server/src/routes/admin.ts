@@ -81,7 +81,7 @@ router.get("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
   try {
     const school = await School.findById(req.params.schoolId).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
-    const stats = await getSchoolStats(req.params.schoolId);
+    const stats = await getSchoolStats(req.params.schoolId as string);
     res.json({
       id: (school as any)._id.toString(), name: school.name, schoolCode: school.schoolCode,
       division: school.division || "", district: school.district || "", region: school.region || "",
@@ -99,7 +99,7 @@ router.patch("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
   try {
     const school = await School.findByIdAndUpdate(req.params.schoolId, { $set: req.body }, { new: true }).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
-    const stats = await getSchoolStats(req.params.schoolId);
+    const stats = await getSchoolStats(req.params.schoolId as string);
     res.json({
       id: (school as any)._id.toString(), name: school.name, schoolCode: school.schoolCode,
       division: school.division || "", district: school.district || "", region: school.region || "",
@@ -117,7 +117,7 @@ router.post("/schools/:schoolId/activate", async (req: AuthRequest, res: Respons
   try {
     const school = await School.findByIdAndUpdate(req.params.schoolId, { status: "active" }, { new: true }).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
-    const stats = await getSchoolStats(req.params.schoolId);
+    const stats = await getSchoolStats(req.params.schoolId as string);
     res.json({
       id: (school as any)._id.toString(), name: school.name, schoolCode: school.schoolCode,
       division: school.division || "", district: school.district || "", region: school.region || "",
@@ -135,7 +135,7 @@ router.post("/schools/:schoolId/suspend", async (req: AuthRequest, res: Response
   try {
     const school = await School.findByIdAndUpdate(req.params.schoolId, { status: "suspended" }, { new: true }).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
-    const stats = await getSchoolStats(req.params.schoolId);
+    const stats = await getSchoolStats(req.params.schoolId as string);
     res.json({
       id: (school as any)._id.toString(), name: school.name, schoolCode: school.schoolCode,
       division: school.division || "", district: school.district || "", region: school.region || "",

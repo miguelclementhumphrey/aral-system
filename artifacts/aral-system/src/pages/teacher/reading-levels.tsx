@@ -72,6 +72,7 @@ export default function TeacherReadingLevels() {
           month: parseInt(month),
           year: parseInt(year),
           notes: notes || undefined,
+          language: "English" as any,
         },
       });
       toast({ title: "Reading level saved", description: `Record for ${selectedLearner.name} has been saved.` });

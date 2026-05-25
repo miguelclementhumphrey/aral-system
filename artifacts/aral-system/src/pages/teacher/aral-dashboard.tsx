@@ -1,4 +1,4 @@
-import { useGetAralDashboard, useGetAralAdditionalProfile, useSaveAralAdditionalProfile } from "@workspace/api-client-react";
+import { useGetAralDashboard, useGetAralAdditionalProfile, useSaveAralAdditionalProfile, getGetAralAdditionalProfileQueryKey } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,7 @@ function ProfileModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const { data: profile, isLoading } = useGetAralAdditionalProfile(learnerId, { query: { enabled: open } });
+  const { data: profile, isLoading } = useGetAralAdditionalProfile(learnerId, { query: { queryKey: getGetAralAdditionalProfileQueryKey(learnerId), enabled: open } });
   const saveProfile = useSaveAralAdditionalProfile();
   const { toast } = useToast();
   const queryClient = useQueryClient();

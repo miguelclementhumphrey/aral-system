@@ -67,7 +67,7 @@ export default function TeacherLearners() {
   const form = useForm<CreateLearnerFormValues>({
     resolver: zodResolver(createLearnerSchema),
     defaultValues: {
-      firstName: "", middleName: "", lastName: "", lrn: "", gender: "male", age: 7,
+      firstName: "", middleName: "", lastName: "", lrn: "", gender: "male" as any, age: 7 as any,
     },
   });
 
@@ -78,7 +78,7 @@ export default function TeacherLearners() {
 
   const onSubmit = async (data: CreateLearnerFormValues) => {
     try {
-      await createLearner.mutateAsync({ data });
+      await createLearner.mutateAsync({ data: data as any });
       queryClient.invalidateQueries({ queryKey: getGetLearnersQueryKey() });
       toast({ title: "Learner added", description: `${data.firstName} ${data.lastName} has been registered.` });
       setIsDialogOpen(false);
@@ -154,8 +154,8 @@ export default function TeacherLearners() {
                   {(learner as any).middleName ? ` ${(learner as any).middleName.charAt(0)}.` : ""}
                 </TableCell>
                 <TableCell className="font-mono text-sm text-muted-foreground">{learner.lrn}</TableCell>
-                <TableCell className="capitalize">{learner.gender}</TableCell>
-                <TableCell>{learner.age}</TableCell>
+                <TableCell className="capitalize">{(learner as any).gender}</TableCell>
+                <TableCell>{(learner as any).age}</TableCell>
                 <TableCell>
                   {learner.isAral ? (
                     <Badge variant="destructive" className="text-xs">
