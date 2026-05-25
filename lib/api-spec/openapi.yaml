@@ -1,22 +1,43 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ARAL System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: admin
+    description: Super Admin operations
+  - name: schools
+    description: School operations
+  - name: schoolHead
+    description: School Head operations
+  - name: gradeLevels
+    description: Grade level operations
+  - name: teachers
+    description: Teacher operations
+  - name: learners
+    description: Learner operations
+  - name: aral
+    description: ARAL Dashboard operations
+  - name: attendance
+    description: Attendance operations
+  - name: readingLevel
+    description: Reading level operations
+  - name: dashboard
+    description: Dashboard summary operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +45,683 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login for school head or teacher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/admin/login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Super admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Admin login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/set-password:
+    post:
+      operationId: setPassword
+      tags: [auth]
+      summary: Set initial password for school head first login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPasswordInput"
+      responses:
+        "200":
+          description: Password set successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/schools:
+    get:
+      operationId: getSchoolsForLogin
+      tags: [auth]
+      summary: Get list of active schools for login dropdown
+      responses:
+        "200":
+          description: List of schools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SchoolOption"
+
+  # Super Admin - Schools
+  /admin/schools:
+    get:
+      operationId: adminGetSchools
+      tags: [admin]
+      summary: Get all schools (admin only)
+      responses:
+        "200":
+          description: All schools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/School"
+    post:
+      operationId: adminCreateSchool
+      tags: [admin]
+      summary: Register a new school
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolInput"
+      responses:
+        "201":
+          description: School created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+
+  /admin/schools/{schoolId}:
+    get:
+      operationId: adminGetSchool
+      tags: [admin]
+      summary: Get a school by ID
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: School details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+    patch:
+      operationId: adminUpdateSchool
+      tags: [admin]
+      summary: Update school status or info
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolUpdate"
+      responses:
+        "200":
+          description: School updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+
+  /admin/schools/{schoolId}/activate:
+    post:
+      operationId: adminActivateSchool
+      tags: [admin]
+      summary: Activate a school
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: School activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+
+  /admin/schools/{schoolId}/suspend:
+    post:
+      operationId: adminSuspendSchool
+      tags: [admin]
+      summary: Suspend a school
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: School suspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+
+  /admin/schools/{schoolId}/reset-password:
+    post:
+      operationId: adminResetSchoolPassword
+      tags: [admin]
+      summary: Reset school head password
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/stats:
+    get:
+      operationId: adminGetStats
+      tags: [admin]
+      summary: Get system-wide statistics
+      responses:
+        "200":
+          description: System stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  # School Head Profile
+  /school-head/profile:
+    get:
+      operationId: getSchoolHeadProfile
+      tags: [schoolHead]
+      summary: Get school head profile
+      responses:
+        "200":
+          description: School head profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolHeadProfile"
+    post:
+      operationId: saveSchoolHeadProfile
+      tags: [schoolHead]
+      summary: Save school head profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolHeadProfileInput"
+      responses:
+        "200":
+          description: Profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolHeadProfile"
+
+  # Grade Levels
+  /grade-levels:
+    get:
+      operationId: getGradeLevels
+      tags: [gradeLevels]
+      summary: Get grade levels for this school
+      responses:
+        "200":
+          description: Grade levels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GradeLevel"
+    post:
+      operationId: createGradeLevel
+      tags: [gradeLevels]
+      summary: Create a grade level
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GradeLevelInput"
+      responses:
+        "201":
+          description: Grade level created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeLevel"
+
+  /grade-levels/{gradeLevelId}:
+    get:
+      operationId: getGradeLevel
+      tags: [gradeLevels]
+      summary: Get a grade level
+      parameters:
+        - name: gradeLevelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Grade level
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeLevel"
+
+  # Teachers
+  /teachers:
+    get:
+      operationId: getTeachers
+      tags: [teachers]
+      summary: Get teachers for this school
+      responses:
+        "200":
+          description: Teachers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Teacher"
+    post:
+      operationId: createTeacher
+      tags: [teachers]
+      summary: Add a teacher to a grade level
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeacherInput"
+      responses:
+        "201":
+          description: Teacher added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+
+  /teachers/{teacherId}:
+    get:
+      operationId: getTeacher
+      tags: [teachers]
+      summary: Get teacher details
+      parameters:
+        - name: teacherId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Teacher details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+
+  /teachers/profile:
+    get:
+      operationId: getTeacherProfile
+      tags: [teachers]
+      summary: Get current teacher's profile
+      responses:
+        "200":
+          description: Teacher profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherProfile"
+    post:
+      operationId: saveTeacherProfile
+      tags: [teachers]
+      summary: Save teacher profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeacherProfileInput"
+      responses:
+        "200":
+          description: Profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherProfile"
+
+  # Learners
+  /learners:
+    get:
+      operationId: getLearners
+      tags: [learners]
+      summary: Get learners for teacher's grade level
+      responses:
+        "200":
+          description: Learners list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Learner"
+    post:
+      operationId: createLearner
+      tags: [learners]
+      summary: Add a learner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LearnerInput"
+      responses:
+        "201":
+          description: Learner added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+
+  /learners/{learnerId}:
+    get:
+      operationId: getLearner
+      tags: [learners]
+      summary: Get learner details
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Learner details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+    patch:
+      operationId: updateLearner
+      tags: [learners]
+      summary: Update learner profiling data
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LearnerUpdate"
+      responses:
+        "200":
+          description: Learner updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+
+  /learners/{learnerId}/flag-aral:
+    post:
+      operationId: flagLearnerAsAral
+      tags: [learners]
+      summary: Flag a learner as ARAL
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Learner flagged as ARAL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+
+  # ARAL Dashboard
+  /aral/dashboard:
+    get:
+      operationId: getAralDashboard
+      tags: [aral]
+      summary: Get ARAL dashboard for teacher's grade level
+      responses:
+        "200":
+          description: ARAL dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AralDashboard"
+
+  /aral/learners/{learnerId}/additional-profile:
+    get:
+      operationId: getAralAdditionalProfile
+      tags: [aral]
+      summary: Get ARAL additional profile data
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Additional profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AralAdditionalProfile"
+    post:
+      operationId: saveAralAdditionalProfile
+      tags: [aral]
+      summary: Save ARAL additional profile data
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AralAdditionalProfileInput"
+      responses:
+        "200":
+          description: Profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AralAdditionalProfile"
+
+  # Attendance
+  /attendance:
+    get:
+      operationId: getAttendance
+      tags: [attendance]
+      summary: Get weekly attendance records for grade level
+      responses:
+        "200":
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceRecord"
+    post:
+      operationId: saveAttendance
+      tags: [attendance]
+      summary: Save weekly attendance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceInput"
+      responses:
+        "200":
+          description: Attendance saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+
+  # Reading Level
+  /reading-levels:
+    get:
+      operationId: getReadingLevels
+      tags: [readingLevel]
+      summary: Get monthly reading level records for grade level
+      responses:
+        "200":
+          description: Reading level records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReadingLevelRecord"
+    post:
+      operationId: saveReadingLevel
+      tags: [readingLevel]
+      summary: Save monthly reading level
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReadingLevelInput"
+      responses:
+        "200":
+          description: Reading level saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingLevelRecord"
+
+  /reading-levels/{recordId}:
+    patch:
+      operationId: updateReadingLevel
+      tags: [readingLevel]
+      summary: Update a reading level record
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReadingLevelUpdate"
+      responses:
+        "200":
+          description: Reading level updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingLevelRecord"
+
+  # Dashboard summary
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats for school head
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +732,962 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: ["string", "null"]
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+        requiresPasswordChange:
+          type: boolean
+        profileComplete:
+          type: boolean
+      required:
+        - token
+        - user
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [super_admin, school_head, teacher]
+        name:
+          type: string
+        schoolId:
+          type: ["string", "null"]
+        schoolName:
+          type: ["string", "null"]
+        gradeLevelId:
+          type: ["string", "null"]
+      required:
+        - id
+        - role
+        - name
+
+    LoginInput:
+      type: object
+      properties:
+        schoolId:
+          type: string
+        credential:
+          type: string
+        role:
+          type: string
+          enum: [school_head, teacher]
+        teacherId:
+          type: ["string", "null"]
+      required:
+        - schoolId
+        - credential
+        - role
+
+    AdminLoginInput:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    SetPasswordInput:
+      type: object
+      properties:
+        schoolId:
+          type: string
+        tempCredential:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - schoolId
+        - tempCredential
+        - newPassword
+
+    SchoolOption:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        hasTeachers:
+          type: boolean
+      required:
+        - id
+        - name
+        - hasTeachers
+
+    School:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        schoolCode:
+          type: string
+        division:
+          type: string
+        district:
+          type: string
+        region:
+          type: string
+        schoolHeadName:
+          type: string
+        schoolHeadContact:
+          type: string
+        status:
+          type: string
+          enum: [pending, active, suspended]
+        profileComplete:
+          type: boolean
+        teachersCount:
+          type: integer
+        learnersCount:
+          type: integer
+        aralLearnersCount:
+          type: integer
+        lastLoginAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - schoolCode
+        - status
+        - profileComplete
+        - teachersCount
+        - learnersCount
+        - aralLearnersCount
+        - createdAt
+
+    SchoolInput:
+      type: object
+      properties:
+        name:
+          type: string
+        division:
+          type: string
+        district:
+          type: string
+        region:
+          type: string
+        schoolHeadName:
+          type: string
+        schoolHeadContact:
+          type: string
+      required:
+        - name
+        - division
+        - district
+        - region
+        - schoolHeadName
+        - schoolHeadContact
+
+    SchoolUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        division:
+          type: string
+        district:
+          type: string
+        region:
+          type: string
+        schoolHeadName:
+          type: string
+        schoolHeadContact:
+          type: string
+        status:
+          type: string
+          enum: [pending, active, suspended]
+
+    SchoolHeadProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        schoolId:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type: ["string", "null"]
+        lastName:
+          type: string
+        designation:
+          type: string
+        position:
+          type: string
+        contactNumber:
+          type: string
+        email:
+          type: string
+        district:
+          type: string
+        division:
+          type: string
+        schoolYear:
+          type: string
+        highestEducationalAttainment:
+          type: string
+        yearsInService:
+          type: string
+        fieldOfSpecialization:
+          type: string
+        trainingsAttended:
+          type: array
+          items:
+            type: string
+        isComplete:
+          type: boolean
+      required:
+        - id
+        - schoolId
+        - firstName
+        - lastName
+        - designation
+        - position
+        - contactNumber
+        - email
+        - district
+        - division
+        - schoolYear
+        - highestEducationalAttainment
+        - yearsInService
+        - fieldOfSpecialization
+        - trainingsAttended
+        - isComplete
+
+    SchoolHeadProfileInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        designation:
+          type: string
+        position:
+          type: string
+        contactNumber:
+          type: string
+        email:
+          type: string
+        district:
+          type: string
+        division:
+          type: string
+        schoolYear:
+          type: string
+        highestEducationalAttainment:
+          type: string
+        yearsInService:
+          type: string
+        fieldOfSpecialization:
+          type: string
+        trainingsAttended:
+          type: array
+          items:
+            type: string
+      required:
+        - firstName
+        - lastName
+        - designation
+        - position
+        - contactNumber
+        - email
+        - district
+        - division
+        - schoolYear
+        - highestEducationalAttainment
+        - yearsInService
+        - fieldOfSpecialization
+
+    GradeLevel:
+      type: object
+      properties:
+        id:
+          type: string
+        schoolId:
+          type: string
+        name:
+          type: string
+        teachersCount:
+          type: integer
+        learnersCount:
+          type: integer
+        aralLearnersCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - schoolId
+        - name
+        - teachersCount
+        - learnersCount
+        - aralLearnersCount
+        - createdAt
+
+    GradeLevelInput:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    Teacher:
+      type: object
+      properties:
+        id:
+          type: string
+        schoolId:
+          type: string
+        gradeLevelId:
+          type: string
+        gradeLevelName:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type: ["string", "null"]
+        lastName:
+          type: string
+        pin:
+          type: ["string", "null"]
+        profileComplete:
+          type: boolean
+        isActive:
+          type: boolean
+        learnersCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - schoolId
+        - gradeLevelId
+        - gradeLevelName
+        - firstName
+        - lastName
+        - profileComplete
+        - isActive
+        - learnersCount
+        - createdAt
+
+    TeacherInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        gradeLevelId:
+          type: string
+      required:
+        - firstName
+        - lastName
+        - gradeLevelId
+
+    TeacherProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        teacherId:
+          type: string
+        age:
+          type: ["integer", "null"]
+        sex:
+          type: ["string", "null"]
+        dateOfBirth:
+          type: ["string", "null"]
+        yearsInService:
+          type: string
+        highestEducationalAttainment:
+          type: string
+        fieldOfSpecialization:
+          type: string
+        currentGradeLevel:
+          type: string
+        contactNumber:
+          type: string
+        mostSubjectHandled:
+          type: string
+        trainingsAttended:
+          type: array
+          items:
+            type: string
+        isComplete:
+          type: boolean
+      required:
+        - id
+        - teacherId
+        - yearsInService
+        - highestEducationalAttainment
+        - fieldOfSpecialization
+        - currentGradeLevel
+        - contactNumber
+        - mostSubjectHandled
+        - trainingsAttended
+        - isComplete
+
+    TeacherProfileInput:
+      type: object
+      properties:
+        age:
+          type: integer
+        sex:
+          type: string
+        dateOfBirth:
+          type: string
+        yearsInService:
+          type: string
+        highestEducationalAttainment:
+          type: string
+        fieldOfSpecialization:
+          type: string
+        currentGradeLevel:
+          type: string
+        contactNumber:
+          type: string
+        mostSubjectHandled:
+          type: string
+        trainingsAttended:
+          type: array
+          items:
+            type: string
+      required:
+        - yearsInService
+        - highestEducationalAttainment
+        - fieldOfSpecialization
+        - currentGradeLevel
+        - contactNumber
+        - mostSubjectHandled
+
+    Learner:
+      type: object
+      properties:
+        id:
+          type: string
+        schoolId:
+          type: string
+        gradeLevelId:
+          type: string
+        teacherId:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type: ["string", "null"]
+        lastName:
+          type: string
+        lrn:
+          type: string
+        dateOfBirth:
+          type: string
+        sex:
+          type: string
+        guardianName:
+          type: string
+        guardianContact:
+          type: string
+        address:
+          type: string
+        isAral:
+          type: boolean
+        aralFlaggedAt:
+          type: ["string", "null"]
+        profileComplete:
+          type: boolean
+        readingLevelEnglish:
+          type: ["string", "null"]
+        readingLevelFilipino:
+          type: ["string", "null"]
+        governmentBenefits:
+          type: array
+          items:
+            type: string
+        parentsEducation:
+          type: ["string", "null"]
+        modeOfTransportation:
+          type: ["string", "null"]
+        distanceFromSchool:
+          type: ["string", "null"]
+        previousTransfers:
+          type: ["string", "null"]
+        letterRecognition:
+          type: ["string", "null"]
+        letterSoundCorrespondence:
+          type: ["string", "null"]
+        wordRecognition:
+          type: ["string", "null"]
+        homeLiteracyEnvironment:
+          type: ["string", "null"]
+        parentalSupport:
+          type: ["string", "null"]
+        classroomLearningEnvironment:
+          type: ["string", "null"]
+        languageConsiderations:
+          type: ["string", "null"]
+        suggestedInterventions:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - schoolId
+        - gradeLevelId
+        - teacherId
+        - firstName
+        - lastName
+        - lrn
+        - dateOfBirth
+        - sex
+        - guardianName
+        - guardianContact
+        - address
+        - isAral
+        - profileComplete
+        - governmentBenefits
+        - suggestedInterventions
+        - createdAt
+
+    LearnerInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        lrn:
+          type: string
+        dateOfBirth:
+          type: string
+        sex:
+          type: string
+        guardianName:
+          type: string
+        guardianContact:
+          type: string
+        address:
+          type: string
+        readingLevelEnglish:
+          type: string
+        readingLevelFilipino:
+          type: string
+        governmentBenefits:
+          type: array
+          items:
+            type: string
+        parentsEducation:
+          type: string
+        modeOfTransportation:
+          type: string
+        distanceFromSchool:
+          type: string
+        previousTransfers:
+          type: string
+        letterRecognition:
+          type: string
+        letterSoundCorrespondence:
+          type: string
+        wordRecognition:
+          type: string
+        homeLiteracyEnvironment:
+          type: string
+        parentalSupport:
+          type: string
+        classroomLearningEnvironment:
+          type: string
+        languageConsiderations:
+          type: string
+        suggestedInterventions:
+          type: array
+          items:
+            type: string
+      required:
+        - firstName
+        - lastName
+        - lrn
+        - dateOfBirth
+        - sex
+        - guardianName
+        - guardianContact
+        - address
+
+    LearnerUpdate:
+      type: object
+      properties:
+        readingLevelEnglish:
+          type: string
+        readingLevelFilipino:
+          type: string
+        governmentBenefits:
+          type: array
+          items:
+            type: string
+        parentsEducation:
+          type: string
+        modeOfTransportation:
+          type: string
+        distanceFromSchool:
+          type: string
+        previousTransfers:
+          type: string
+        letterRecognition:
+          type: string
+        letterSoundCorrespondence:
+          type: string
+        wordRecognition:
+          type: string
+        homeLiteracyEnvironment:
+          type: string
+        parentalSupport:
+          type: string
+        classroomLearningEnvironment:
+          type: string
+        languageConsiderations:
+          type: string
+        suggestedInterventions:
+          type: array
+          items:
+            type: string
+
+    AralDashboard:
+      type: object
+      properties:
+        gradeLevelId:
+          type: string
+        gradeLevelName:
+          type: string
+        totalAralLearners:
+          type: integer
+        learners:
+          type: array
+          items:
+            $ref: "#/components/schemas/AralLearnerSummary"
+      required:
+        - gradeLevelId
+        - gradeLevelName
+        - totalAralLearners
+        - learners
+
+    AralLearnerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        lrn:
+          type: string
+        aralFlaggedAt:
+          type: string
+        additionalProfileComplete:
+          type: boolean
+        lastUpdatedAt:
+          type: ["string", "null"]
+        currentReadingLevel:
+          type: ["string", "null"]
+        consecutiveAbsences:
+          type: integer
+      required:
+        - id
+        - name
+        - lrn
+        - aralFlaggedAt
+        - additionalProfileComplete
+        - consecutiveAbsences
+
+    AralAdditionalProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        learnerId:
+          type: string
+        frequencyOfAbsenteeism:
+          type: ["string", "null"]
+        interventions:
+          type: array
+          items:
+            type: string
+        recommendedAssessment:
+          type: ["string", "null"]
+        otherObservations:
+          type: ["string", "null"]
+        isComplete:
+          type: boolean
+        updatedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - learnerId
+        - interventions
+        - isComplete
+
+    AralAdditionalProfileInput:
+      type: object
+      properties:
+        frequencyOfAbsenteeism:
+          type: string
+        interventions:
+          type: array
+          items:
+            type: string
+        recommendedAssessment:
+          type: string
+        otherObservations:
+          type: string
+
+    AttendanceRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        learnerId:
+          type: string
+        learnerName:
+          type: string
+        weekStartDate:
+          type: string
+        weekEndDate:
+          type: string
+        monday:
+          type: ["string", "null"]
+          enum: [present, absent, late, null]
+        tuesday:
+          type: ["string", "null"]
+          enum: [present, absent, late, null]
+        wednesday:
+          type: ["string", "null"]
+          enum: [present, absent, late, null]
+        thursday:
+          type: ["string", "null"]
+          enum: [present, absent, late, null]
+        friday:
+          type: ["string", "null"]
+          enum: [present, absent, late, null]
+        totalAbsences:
+          type: integer
+        isLocked:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - learnerId
+        - learnerName
+        - weekStartDate
+        - weekEndDate
+        - totalAbsences
+        - isLocked
+        - createdAt
+
+    AttendanceInput:
+      type: object
+      properties:
+        learnerId:
+          type: string
+        weekStartDate:
+          type: string
+        monday:
+          type: string
+          enum: [present, absent, late]
+        tuesday:
+          type: string
+          enum: [present, absent, late]
+        wednesday:
+          type: string
+          enum: [present, absent, late]
+        thursday:
+          type: string
+          enum: [present, absent, late]
+        friday:
+          type: string
+          enum: [present, absent, late]
+      required:
+        - learnerId
+        - weekStartDate
+
+    ReadingLevelRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        learnerId:
+          type: string
+        learnerName:
+          type: string
+        month:
+          type: integer
+        year:
+          type: integer
+        readingLevel:
+          type: string
+        language:
+          type: string
+          enum: [english, filipino]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - learnerId
+        - learnerName
+        - month
+        - year
+        - readingLevel
+        - language
+        - createdAt
+
+    ReadingLevelInput:
+      type: object
+      properties:
+        learnerId:
+          type: string
+        month:
+          type: integer
+        year:
+          type: integer
+        readingLevel:
+          type: string
+        language:
+          type: string
+          enum: [english, filipino]
+        notes:
+          type: string
+      required:
+        - learnerId
+        - month
+        - year
+        - readingLevel
+        - language
+
+    ReadingLevelUpdate:
+      type: object
+      properties:
+        readingLevel:
+          type: string
+        notes:
+          type: string
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalGradeLevels:
+          type: integer
+        totalTeachers:
+          type: integer
+        totalLearners:
+          type: integer
+        totalAralLearners:
+          type: integer
+        gradeLevelBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/GradeLevelStat"
+        readingLevelDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadingLevelStat"
+      required:
+        - totalGradeLevels
+        - totalTeachers
+        - totalLearners
+        - totalAralLearners
+        - gradeLevelBreakdown
+        - readingLevelDistribution
+
+    GradeLevelStat:
+      type: object
+      properties:
+        name:
+          type: string
+        totalLearners:
+          type: integer
+        aralLearners:
+          type: integer
+      required:
+        - name
+        - totalLearners
+        - aralLearners
+
+    ReadingLevelStat:
+      type: object
+      properties:
+        level:
+          type: string
+        count:
+          type: integer
+      required:
+        - level
+        - count
+
+    AdminStats:
+      type: object
+      properties:
+        totalSchools:
+          type: integer
+        activeSchools:
+          type: integer
+        pendingSchools:
+          type: integer
+        suspendedSchools:
+          type: integer
+        totalTeachers:
+          type: integer
+        totalLearners:
+          type: integer
+        totalAralLearners:
+          type: integer
+      required:
+        - totalSchools
+        - activeSchools
+        - pendingSchools
+        - suspendedSchools
+        - totalTeachers
+        - totalLearners
+        - totalAralLearners

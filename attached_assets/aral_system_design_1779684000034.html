@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARAL System Design — Complete Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --text: #1a1917;
+    --muted: #6b6960;
+    --hint: #a09e96;
+    --admin: #3c3489;
+    --admin-bg: #eeedfe;
+    --admin-border: #afa9ec;
+    --sh: #0f6e56;
+    --sh-bg: #e1f5ee;
+    --sh-border: #5dcaa5;
+    --teacher: #185fa5;
+    --teacher-bg: #e6f1fb;
+    --teacher-border: #85b7eb;
+    --aral: #993c1d;
+    --aral-bg: #faece7;
+    --aral-border: #f0997b;
+    --gate: #854f0b;
+    --gate-bg: #faeeda;
+    --gate-border: #ef9f27;
+    --success: #3b6d11;
+    --success-bg: #eaf3de;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  nav {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+  }
+
+  .nav-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--hint);
+    padding: 0 20px 16px;
+  }
+
+  nav a {
+    display: block;
+    padding: 7px 20px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  nav a:hover { color: var(--text); background: var(--bg); }
+
+  nav a.role-admin { border-left-color: var(--admin); color: var(--admin); font-weight: 500; }
+  nav a.role-sh { border-left-color: var(--sh); color: var(--sh); font-weight: 500; }
+  nav a.role-teacher { border-left-color: var(--teacher); color: var(--teacher); font-weight: 500; }
+  nav a.role-aral { border-left-color: var(--aral); color: var(--aral); font-weight: 500; }
+
+  nav .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 20px;
+  }
+
+  main {
+    padding: 48px 56px 80px;
+    max-width: 820px;
+  }
+
+  .doc-header {
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .doc-header h1 {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .doc-header p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .role-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  .badge.admin { background: var(--admin-bg); color: var(--admin); }
+  .badge.admin .badge-dot { background: var(--admin); }
+  .badge.sh { background: var(--sh-bg); color: var(--sh); }
+  .badge.sh .badge-dot { background: var(--sh); }
+  .badge.teacher { background: var(--teacher-bg); color: var(--teacher); }
+  .badge.teacher .badge-dot { background: var(--teacher); }
+  .badge.aral { background: var(--aral-bg); color: var(--aral); }
+  .badge.aral .badge-dot { background: var(--aral); }
+  .badge.gate { background: var(--gate-bg); color: var(--gate); }
+  .badge.gate .badge-dot { background: var(--gate); }
+
+  section { margin-bottom: 48px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label .label-bar {
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+  }
+
+  .section-label.admin { color: var(--admin); }
+  .section-label.admin .label-bar { background: var(--admin); }
+  .section-label.sh { color: var(--sh); }
+  .section-label.sh .label-bar { background: var(--sh); }
+  .section-label.teacher { color: var(--teacher); }
+  .section-label.teacher .label-bar { background: var(--teacher); }
+  .section-label.aral { color: var(--aral); }
+  .section-label.aral .label-bar { background: var(--aral); }
+  .section-label.system { color: var(--muted); }
+  .section-label.system .label-bar { background: var(--muted); }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 28px 0 12px;
+    color: var(--text);
+  }
+
+  p { margin-bottom: 12px; color: var(--text); }
+  p:last-child { margin-bottom: 0; }
+
+  .step-block {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: var(--surface);
+  }
+
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-num.admin { background: var(--admin-bg); color: var(--admin); }
+  .step-num.sh { background: var(--sh-bg); color: var(--sh); }
+  .step-num.teacher { background: var(--teacher-bg); color: var(--teacher); }
+  .step-num.aral { background: var(--aral-bg); color: var(--aral); }
+  .step-num.system { background: var(--bg); color: var(--muted); }
+
+  .step-title { font-weight: 500; font-size: 14px; line-height: 1.4; }
+  .step-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  .step-body {
+    padding: 16px 20px;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+
+  .step-body ul {
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .step-body ul li {
+    padding: 4px 0 4px 16px;
+    position: relative;
+    color: var(--text);
+  }
+
+  .step-body ul li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--hint);
+  }
+
+  .gate-box {
+    background: var(--gate-bg);
+    border: 1px solid var(--gate-border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .gate-box strong {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gate);
+    margin-bottom: 4px;
+  }
+
+  .error-box {
+    background: #fcebeb;
+    border: 1px solid #f09595;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 13px;
+    color: #501313;
+  }
+
+  .error-box strong {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #a32d2d;
+    margin-bottom: 4px;
+  }
+
+  .success-box {
+    background: var(--success-bg);
+    border: 1px solid #97c459;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 13px;
+    color: #173404;
+  }
+
+  .success-box strong {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--success);
+    margin-bottom: 4px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 16px 0;
+  }
+
+  th {
+    background: var(--bg);
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--aral);
+  }
+
+  .role-row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+  .role-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+
+  .flow-arrow {
+    text-align: center;
+    color: var(--hint);
+    font-size: 18px;
+    margin: 4px 0;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .info-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    background: var(--surface);
+  }
+
+  .info-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .info-card p { font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 700px) {
+    .layout { grid-template-columns: 1fr; }
+    nav { position: static; height: auto; }
+    main { padding: 24px 20px; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav>
+  <div class="nav-title">ARAL System Design</div>
+  <a href="#overview">Overview</a>
+  <a href="#roles">Roles &amp; separation</a>
+  <div class="divider"></div>
+  <a href="#super-admin" class="role-admin">Super Admin</a>
+  <a href="#login">Login system</a>
+  <div class="divider"></div>
+  <a href="#school-head" class="role-sh">School Head flow</a>
+  <a href="#sh-profile">— Profile setup</a>
+  <a href="#grade-levels">— Grade levels</a>
+  <a href="#add-teachers">— Add teachers</a>
+  <div class="divider"></div>
+  <a href="#teacher-flow" class="role-teacher">Teacher flow</a>
+  <a href="#teacher-profile">— Profile gate</a>
+  <a href="#learners">— Adding learners</a>
+  <div class="divider"></div>
+  <a href="#aral" class="role-aral">ARAL Dashboard</a>
+  <a href="#attendance">— Weekly attendance</a>
+  <a href="#reading">— Reading level</a>
+  <div class="divider"></div>
+  <a href="#general">General rules</a>
+</nav>
+
+<main>
+
+  <div class="doc-header">
+    <h1>ARAL System — Complete Design Specification</h1>
+    <p>Full implementation guide including two-layer authentication, all flow gates, validation rules, and error prevention.</p>
+    <div class="role-badges">
+      <span class="badge admin"><span class="badge-dot"></span>Super Admin</span>
+      <span class="badge sh"><span class="badge-dot"></span>School Head</span>
+      <span class="badge teacher"><span class="badge-dot"></span>Teacher</span>
+      <span class="badge aral"><span class="badge-dot"></span>ARAL Dashboard</span>
+      <span class="badge gate"><span class="badge-dot"></span>Gate / validation</span>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="section-label system"><span class="label-bar"></span>Overview</div>
+    <h2>How the system works</h2>
+    <p>The ARAL system has four layers of access. Each layer must be properly set up before the next one can operate. Nothing is accessible unless the layer above it has completed its setup — this is enforced by gates at every transition point.</p>
+    <div class="two-col" style="margin-top: 20px;">
+      <div class="info-card">
+        <h4>Setup order</h4>
+        <p>Super Admin → School Head → Teachers → Learners. No skipping. Each layer unlocks the next.</p>
+      </div>
+      <div class="info-card">
+        <h4>Authentication model</h4>
+        <p>School IDs are issued by Super Admin, used once to activate, then replaced by a real password. The ID alone is never enough.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section id="roles">
+    <div class="section-label system"><span class="label-bar"></span>Roles</div>
+    <h2>Role separation</h2>
+    <table>
+      <thead>
+        <tr><th>Role</th><th>What they can do</th><th>What they cannot do</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge admin" style="font-size:11px;"><span class="badge-dot"></span>Super Admin</span></td>
+          <td>Register schools, issue School IDs, activate / suspend schools, reset passwords, view all schools</td>
+          <td>Cannot create grade levels, add teachers, or touch learner data</td>
+        </tr>
+        <tr>
+          <td><span class="badge sh" style="font-size:11px;"><span class="badge-dot"></span>School Head</span></td>
+          <td>Complete school profile, create grade levels, add teachers to grade levels</td>
+          <td>Cannot add learners, cannot access ARAL Dashboard directly</td>
+        </tr>
+        <tr>
+          <td><span class="badge teacher" style="font-size:11px;"><span class="badge-dot"></span>Teacher</span></td>
+          <td>Complete own profile, add and profile learners, manage ARAL Dashboard for their grade level</td>
+          <td>Cannot create grade levels, cannot see other teachers' data</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size: 13px; color: var(--muted);">Role separation must be enforced at the database/API level — not just by hiding buttons in the UI.</p>
+  </section>
+
+  <!-- SUPER ADMIN -->
+  <section id="super-admin">
+    <div class="section-label admin"><span class="label-bar"></span>Super Admin</div>
+    <h2>Layer 0 — Super Admin panel</h2>
+    <p>The Super Admin is the system owner (e.g. DepEd IT division or your organization's administrator). This is a completely separate, secured panel — not accessible from the main school login screen.</p>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num admin">ADMIN 01</span>
+        <div>
+          <div class="step-title">Super Admin login</div>
+          <div class="step-sub">Separate URL, own credentials — never a School ID</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>Super Admin logs in using a dedicated username and strong password (not tied to any school).</li>
+          <li>This panel should be hosted on a separate route (e.g. <code>/admin</code>) and not linked from the public login page.</li>
+          <li>Enable two-factor authentication for the Super Admin account.</li>
+          <li>Failed login attempts lock the account after 5 tries and send an alert email.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num admin">ADMIN 02</span>
+        <div>
+          <div class="step-title">Register a school</div>
+          <div class="step-sub">All school data is created here first</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Required fields when registering a school:</p>
+        <ul>
+          <li>School name (full official name)</li>
+          <li>School ID — system-generated automatically, or manually assigned. Must be unique. Never entered by the school themselves.</li>
+          <li>Division / District / Region</li>
+          <li>School Head name and contact (for delivery of the School ID credential)</li>
+          <li>Status: set to <strong>Pending</strong> by default</li>
+        </ul>
+        <div class="gate-box">
+          <strong>Validation</strong>
+          Duplicate school names within the same division must trigger a warning. School IDs must be unique system-wide. No school is accessible until status is changed to Active.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num admin">ADMIN 03</span>
+        <div>
+          <div class="step-title">Activate a school</div>
+          <div class="step-sub">This is the gate that allows the School Head to log in</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>Super Admin changes school status from <strong>Pending</strong> to <strong>Active</strong>.</li>
+          <li>The School ID is then delivered to the School Head through a secure channel: official email, SMS to the registered number, or a printed letter. Never posted publicly.</li>
+          <li>The system logs the date and method of delivery.</li>
+        </ul>
+        <div class="success-box">
+          <strong>Result</strong>
+          Once status is Active, the School Head can find their school in the login dropdown and use the issued School ID as a first-time credential.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num admin">ADMIN 04</span>
+        <div>
+          <div class="step-title">Admin maintenance</div>
+          <div class="step-sub">Ongoing responsibilities</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>Suspend a school (blocks all logins for that school instantly).</li>
+          <li>Reset a School Head's password if they are locked out — generates a new temporary credential and delivers it securely.</li>
+          <li>View a list of all schools, their status, and last login activity.</li>
+          <li>Deactivate a school at the end of a school year if needed.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGIN -->
+  <section id="login">
+    <div class="section-label system"><span class="label-bar"></span>Authentication</div>
+    <h2>Login system — two-layer model</h2>
+    <p>The public login screen is shared by School Heads and Teachers. Authentication works differently for first-time vs. returning users.</p>
+
+    <h3>First-time login (School Head only)</h3>
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num system">LOGIN 01</span>
+        <div>
+          <div class="step-title">First-time School Head activation</div>
+          <div class="step-sub">School ID used once, then replaced</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>School Head selects their school name from the dropdown.</li>
+          <li>Enters the School ID issued by the Super Admin.</li>
+          <li>System checks: (1) school name exists, (2) school status is Active, (3) School ID matches.</li>
+          <li>If all pass and this is the first login → force a <strong>Set Your Password</strong> screen before anything else.</li>
+          <li>Password requirements: minimum 8 characters, at least one number, at least one special character.</li>
+          <li>After setting the password, the School ID is no longer accepted as a login credential — only the new password works from this point.</li>
+        </ul>
+        <div class="gate-box">
+          <strong>Gate</strong>
+          The School ID becomes a reference/recovery code only. If the School Head forgets their password, the Super Admin resets it — they cannot simply use the School ID again.
+        </div>
+      </div>
+    </div>
+
+    <h3>Returning login (School Head)</h3>
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num system">LOGIN 02</span>
+        <div>
+          <div class="step-title">Returning School Head login</div>
+          <div class="step-sub">School name + password only</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>School Head selects school name → enters password.</li>
+          <li>5 failed attempts → account locked for 15 minutes, Super Admin notified.</li>
+          <li>On success → redirect to home screen (two-button view).</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Teacher login</h3>
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num system">LOGIN 03</span>
+        <div>
+          <div class="step-title">Teacher login flow</div>
+          <div class="step-sub">Only available after School Head setup is complete</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>Teacher taps the Teachers button (only active if grade levels and teachers have been added).</li>
+          <li>Sees a list of teacher names registered by the School Head for their school.</li>
+          <li>Selects their name and enters their PIN or password (system-generated on first enrollment, changeable after first login).</li>
+          <li>If a teacher's account is not yet activated by the School Head: show message — <em>"Your account has not been activated. Contact your School Head."</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Login validation checklist</h3>
+    <table>
+      <thead>
+        <tr><th>Check</th><th>If it fails</th><th>Message to show</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>School name exists in database</td><td>Block login</td><td>"School not found. Contact your administrator."</td></tr>
+        <tr><td>School status is Active</td><td>Block login</td><td>"This school account is not yet activated. Contact the system administrator."</td></tr>
+        <tr><td>Password / School ID matches</td><td>Block login</td><td>"Incorrect password. X attempts remaining."</td></tr>
+        <tr><td>5 failed attempts</td><td>Lock 15 min</td><td>"Too many failed attempts. Try again in 15 minutes."</td></tr>
+        <tr><td>Teacher account active</td><td>Block login</td><td>"Account not yet activated by School Head."</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SCHOOL HEAD -->
+  <section id="school-head">
+    <div class="section-label sh"><span class="label-bar"></span>School Head</div>
+    <h2>School Head flow</h2>
+    <p>After login, the School Head sees the two-button home screen. They tap the School Head button and must complete three steps in order before the Teachers button is activated.</p>
+  </section>
+
+  <section id="sh-profile">
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num sh">SH 01</span>
+        <div>
+          <div class="step-title">School Head profile setup</div>
+          <div class="step-sub">Required gate — nothing else unlocks until complete</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Required profile fields:</p>
+        <ul>
+          <li>Full name (First, Middle, Last)</li>
+          <li>Designation / position</li>
+          <li>Contact number</li>
+          <li>Email address</li>
+          <li>School district and division</li>
+          <li>School year / academic year</li>
+        </ul>
+        <div class="gate-box">
+          <strong>Gate — enforced server-side</strong>
+          On every session start, check if profile is complete. If not, redirect to profile form. The Create Grade Level feature, Add Teachers feature, and all School Head menus remain inaccessible until every required field is saved.
+        </div>
+        <div class="error-box">
+          <strong>Error prevention</strong>
+          Validate each field inline as the user types — do not wait until submit. If the School Head exits mid-profile, auto-save a draft so they do not start over. Show a completion percentage or checklist so they know what is still missing.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="grade-levels">
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num sh">SH 02</span>
+        <div>
+          <div class="step-title">Create grade levels</div>
+          <div class="step-sub">Unlocks after profile is 100% complete</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Available grade levels: Kinder, Grades 1 through 12, Floating.</p>
+        <ul>
+          <li>Each grade level can only be created once per school. Already-created options are shown as disabled in the UI.</li>
+          <li>Once a grade level has teachers or learners assigned, it cannot be deleted — only deactivated.</li>
+          <li>Show a running list of created grade levels with a teacher count on each.</li>
+          <li>Creating a grade level automatically generates an ARAL Dashboard for that grade level — no manual setup needed.</li>
+        </ul>
+        <div class="gate-box">
+          <strong>Gate</strong>
+          At least one grade level must be created before the Add Teachers option appears.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="add-teachers">
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num sh">SH 03</span>
+        <div>
+          <div class="step-title">Add teachers</div>
+          <div class="step-sub">Unlocks after at least one grade level exists</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Required fields when adding a teacher:</p>
+        <ul>
+          <li>First Name, Middle Name, Last Name</li>
+          <li>Grade level assignment (must select from already-created levels)</li>
+        </ul>
+        <p>On save, the system automatically creates a teacher account with a system-generated PIN. This PIN should be delivered to the teacher (printed or via SMS).</p>
+        <div class="error-box">
+          <strong>Error prevention</strong>
+          Warn if a teacher with the same full name is added to the same grade level. Validate that a grade level is selected before saving. Confirm success: <em>"Teacher [Name] added to [Grade Level]."</em>
+        </div>
+        <div class="success-box">
+          <strong>Result — Teachers button activates</strong>
+          Once at least one teacher has been added to at least one grade level, the Teachers button on the home screen becomes active. Show this change immediately after saving.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEACHER FLOW -->
+  <section id="teacher-flow">
+    <div class="section-label teacher"><span class="label-bar"></span>Teacher</div>
+    <h2>Teacher flow</h2>
+    <p>Teachers access the system through the (now activated) Teachers button. Their flow is also gated — they cannot add learners until their own profile is complete.</p>
+  </section>
+
+  <section id="teacher-profile">
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num teacher">TCH 01</span>
+        <div>
+          <div class="step-title">Teacher profile gate</div>
+          <div class="step-sub">Must complete before Add Learners is available</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Required teacher profile fields (define your complete list — example):</p>
+        <ul>
+          <li>Age, sex, date of birth</li>
+          <li>Years of service</li>
+          <li>Highest educational attainment</li>
+          <li>Contact number</li>
+          <li>Specialization / subject area</li>
+        </ul>
+        <div class="gate-box">
+          <strong>Gate — enforced server-side on every session</strong>
+          Re-check profile completeness on each login. The Add Learners button remains locked and visually grayed out with a tooltip: <em>"Complete your profile to add learners."</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num teacher">TCH 02</span>
+        <div>
+          <div class="step-title">Select grade level</div>
+          <div class="step-sub">Auto-populated from School Head setup</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>Only grade levels the teacher is assigned to are shown — not all school grade levels.</li>
+          <li>If assigned to multiple grade levels, show all and let the teacher pick one per session.</li>
+          <li>The selected grade level determines which learner list and ARAL Dashboard the teacher sees.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="learners">
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num teacher">TCH 03</span>
+        <div>
+          <div class="step-title">Add and profile learners</div>
+          <div class="step-sub">Available only after teacher profile is complete</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Required fields for each learner:</p>
+        <ul>
+          <li>Full name (First, Middle, Last)</li>
+          <li>Learner Reference Number (LRN) — must be unique within the school</li>
+          <li>Date of birth, sex</li>
+          <li>Guardian name and contact</li>
+          <li>Address</li>
+          <li>Additional profiling fields as defined by your system</li>
+        </ul>
+        <div class="error-box">
+          <strong>Error prevention</strong>
+          Validate LRN format and uniqueness on entry — show error immediately, not after submit. If a learner with the same name already exists in the same grade level, warn: <em>"A learner with this name exists. Check LRN before continuing."</em> Never allow saving an incomplete learner profile.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num teacher">TCH 04</span>
+        <div>
+          <div class="step-title">ARAL learner identification</div>
+          <div class="step-sub">Flags a learner and opens the ARAL Dashboard</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>The ARAL Learner button appears next to each learner's row only after their full profile is saved.</li>
+          <li>Clicking it shows a confirmation: <em>"Mark [Name] as an ARAL learner? They will be added to the ARAL Dashboard."</em></li>
+          <li>On confirm: learner is flagged in the database and the teacher is redirected to the ARAL Dashboard for their grade level.</li>
+          <li>If a learner is already flagged as ARAL, the button changes to <em>"View in ARAL Dashboard"</em> — no duplicate flagging allowed.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARAL DASHBOARD -->
+  <section id="aral">
+    <div class="section-label aral"><span class="label-bar"></span>ARAL Dashboard</div>
+    <h2>ARAL Dashboard</h2>
+    <p>Each grade level has its own ARAL Dashboard, automatically created when the grade level is created by the School Head. Teachers do not set these up manually.</p>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num aral">ARAL 01</span>
+        <div>
+          <div class="step-title">Dashboard overview</div>
+          <div class="step-sub">Lists all ARAL-flagged learners for this grade level</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Each learner row shows:</p>
+        <ul>
+          <li>Learner name</li>
+          <li>Date flagged as ARAL</li>
+          <li>Completion status of their additional profiling (violet-highlighted sections)</li>
+          <li>Last updated date</li>
+          <li>Update Data button</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num aral">ARAL 02</span>
+        <div>
+          <div class="step-title">Update Data — additional profiling</div>
+          <div class="step-sub">The violet-highlighted sections</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>For each field in the additional profiling section:</p>
+        <ul>
+          <li>Define the field name, data type (text, number, date, dropdown), whether required or optional, and allowed values if it is a dropdown.</li>
+          <li>Show the last-updated date so teachers can see if data is stale.</li>
+          <li>Auto-save a draft if the teacher navigates away mid-update.</li>
+        </ul>
+        <div class="error-box">
+          <strong>Error prevention</strong>
+          Validate all fields before saving. Never allow partial saves that appear complete. Show a save confirmation: <em>"[Learner name]'s data has been updated."</em>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="attendance">
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num aral">ARAL 03</span>
+        <div>
+          <div class="step-title">Weekly attendance</div>
+          <div class="step-sub">One record per learner per week</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Fields per week:</p>
+        <ul>
+          <li>Week dates — auto-populated from the school calendar. Teachers do not manually enter dates.</li>
+          <li>Per day, per learner: Present / Absent / Late toggle.</li>
+        </ul>
+        <div class="error-box">
+          <strong>Error prevention</strong>
+          Future dates cannot be marked. Past weeks are locked after a defined submission window (e.g. 3 days after the week ends — define this in system settings). If a learner has 3 or more consecutive absences, show a warning flag on their row.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="reading">
+    <div class="step-block">
+      <div class="step-header">
+        <span class="step-num aral">ARAL 04</span>
+        <div>
+          <div class="step-title">Monthly reading level</div>
+          <div class="step-sub">One record per learner per month</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Fields per month:</p>
+        <ul>
+          <li>Month — auto-populated, current month pre-selected.</li>
+          <li>Reading level — dropdown with defined categories (e.g. Non-reader, Frustration, Instructional, Independent — define your own).</li>
+        </ul>
+        <div class="error-box">
+          <strong>Error prevention</strong>
+          Only one reading level entry per learner per month is allowed. If an entry already exists, display it in read-only mode with an Edit button. Require a reading level before the month's record can be submitted. Never allow a blank reading level to be saved.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GENERAL RULES -->
+  <section id="general">
+    <div class="section-label system"><span class="label-bar"></span>General rules</div>
+    <h2>System-wide rules for error prevention</h2>
+
+    <table>
+      <thead>
+        <tr><th>Rule</th><th>Implementation detail</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>All gates are server-side</td>
+          <td>Never rely only on hiding or disabling buttons in the UI. Validate every gate on the server before saving or displaying data. A user who bypasses the UI should still be blocked.</td>
+        </tr>
+        <tr>
+          <td>Session always knows the school</td>
+          <td>Every piece of data created must be tied to the school ID stored in the session. Never trust client-sent school IDs.</td>
+        </tr>
+        <tr>
+          <td>No orphaned data</td>
+          <td>Grade level created but no teachers assigned → flag it. Teacher added but no grade level selected → block the save. Learner added but profile incomplete → block the save.</td>
+        </tr>
+        <tr>
+          <td>Clear feedback at every step</td>
+          <td>Every action (save, create, activate, flag) must show a success or error message. A blank response after submitting a form is never acceptable.</td>
+        </tr>
+        <tr>
+          <td>Role separation is strict</td>
+          <td>School Heads cannot add learners. Teachers cannot create grade levels. Super Admin cannot touch learner data. Enforce at the API level with role-based access control (RBAC).</td>
+        </tr>
+        <tr>
+          <td>Audit logging</td>
+          <td>Log every significant action (account created, grade level created, teacher added, learner flagged as ARAL, data updated) with a timestamp and the user who performed it.</td>
+        </tr>
+        <tr>
+          <td>Locked buttons always explain why</td>
+          <td>Never show a grayed-out button with no explanation. Always show a tooltip or message stating the exact requirement that has not been met yet.</td>
+        </tr>
+        <tr>
+          <td>Draft auto-save</td>
+          <td>Any multi-field form (profile setup, learner profiling, ARAL update data) must auto-save a draft on navigation away. Require confirmation before discarding a draft.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+</div>
+</body>
+</html>

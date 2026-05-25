@@ -1,0 +1,30 @@
+Log in by selecting the school name, then use the School ID as the password.
+Upon logging in, there are two buttons: Teachers and School Head.
+Teachers cannot use their button if they are not yet enrolled by the School Head.
+This means the School Head must first activate their account.
+The Teachers’ button remains deactivated if no grade level has been created and no teachers have been added yet.
+To activate the account, the School Head must log in through the School Head button.
+After entering the button, the School Head must complete their profile setup (refer to School Head profiling).
+Once the School Head profile is completed, the Create Grade Level feature will be activated.
+In the Create Grade Level section (Kinder, Grades 1–12, Floating):
+Example: If the School Head creates “Kinder,” they can then add teachers.
+When adding teachers, only the full name is required (First Name, Middle Name, and Last Name).
+Once all teachers have been added, the Teachers Button will be activated.
+After activation, teachers can log in.
+The grade levels created by the School Head will automatically appear.
+Teachers will enter the grade level where they are assigned.
+Learners cannot be added unless the teacher has completed profiling first.
+Therefore, the teacher must complete profiling before adding learners. (Refer to profiling.)
+When adding learners, each learner must also be profiled individually. (Refer to learners’ profiling.)
+There is an ARAL LEARNER button once a child is identified as an ARAL learner.
+When the teacher clicks it, it will automatically direct them to the ARAL Dashboard.
+This means every grade level created will automatically have its own ARAL Dashboard.
+When the ARAL Dashboard is opened:
+The enrolled learners will be displayed.
+Each learner will have an Update Data button.
+In updating the data:
+Additional profiling information will be completed.
+(This refers to the violet-highlighted sections.)
+There are default sections for:
+Weekly Attendance
+Monthly Reading Level
