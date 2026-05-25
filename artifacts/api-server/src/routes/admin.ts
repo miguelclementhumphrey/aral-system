@@ -52,17 +52,16 @@ router.get("/schools", async (req: AuthRequest, res: Response) => {
 
 // POST /api/admin/schools
 router.post("/schools", async (req: AuthRequest, res: Response) => {
-  const { name, division, district, region, schoolHeadName, schoolHeadContact } = req.body;
-  if (!name || !division || !district || !region || !schoolHeadName || !schoolHeadContact) {
+  const { name, schoolCode, division, district, region, schoolHeadName, schoolHeadContact } = req.body;
+  if (!name || !schoolCode || !division || !district || !region || !schoolHeadName || !schoolHeadContact) {
     res.status(400).json({ error: "All fields are required" });
     return;
   }
   try {
-    let schoolCode = generateSchoolCode();
-    let exists = await School.findOne({ schoolCode });
-    while (exists) {
-      schoolCode = generateSchoolCode();
-      exists = await School.findOne({ schoolCode });
+    const exists = await School.findOne({ schoolCode });
+    if (exists) {
+      res.status(400).json({ error: `School code "${schoolCode}" is already in use.` });
+      return;
     }
     const school = await School.create({ name, schoolCode, division, district, region, schoolHeadName, schoolHeadContact, status: "pending" });
     res.status(201).json({

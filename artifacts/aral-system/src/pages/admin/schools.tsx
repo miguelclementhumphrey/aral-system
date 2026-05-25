@@ -35,6 +35,7 @@ import { Plus, Search, Eye } from "lucide-react";
 
 const createSchoolSchema = z.object({
   name: z.string().min(1, "School name is required"),
+  schoolCode: z.string().min(1, "School code is required"),
   division: z.string().min(1, "Division is required"),
   district: z.string().min(1, "District is required"),
   region: z.string().min(1, "Region is required"),
@@ -57,6 +58,7 @@ export default function AdminSchools() {
     resolver: zodResolver(createSchoolSchema),
     defaultValues: {
       name: "",
+      schoolCode: "",
       division: "",
       district: "",
       region: "",
@@ -128,6 +130,13 @@ export default function AdminSchools() {
                     <FormItem>
                       <FormLabel>School Name</FormLabel>
                       <FormControl><Input placeholder="e.g. Quezon National High School" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="schoolCode" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>School Code</FormLabel>
+                      <FormControl><Input placeholder="e.g. 301234" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
