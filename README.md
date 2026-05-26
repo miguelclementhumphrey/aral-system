@@ -55,28 +55,8 @@ Create the API environment file:
 cp artifacts/api-server/.env.example artifacts/api-server/.env
 ```
 
-Configure the values in `artifacts/api-server/.env`.
-
-Required backend variables:
-
-| Variable | Purpose |
-|----------|---------|
-| `PORT` | API server port |
-| `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret used to sign JWTs |
-| `CORS_ORIGIN` | Allowed frontend origin |
-
-Optional backend variables:
-
-| Variable | Purpose |
-|----------|---------|
-| `ADMIN_USERNAME` | Seeds an initial super admin when no admin exists |
-| `ADMIN_PASSWORD` | Password for the initial seeded admin |
-| `ADMIN_UPDATE_PASSWORD_ON_START` | Allows an intentional admin password reset during startup |
-| `SEED_DEMO_DATA` | Seeds local development sample records |
-| `LOG_LEVEL` | API logging level |
-
-Do not commit `.env` files. The repository includes only templates.
+Configure the local environment file using the safe placeholders in the example file.
+Do not put real credentials, connection strings, tokens, or passwords in this README.
 
 ## Development
 
@@ -135,14 +115,14 @@ pnpm --filter @workspace/api-spec run codegen
 - Serve `artifacts/aral-system/dist` as the frontend static build.
 - Run `artifacts/api-server/dist/index.mjs` as the API entry point.
 - Configure production secrets through your hosting provider, not committed files.
-- Set `CORS_ORIGIN` to the exact deployed frontend URL.
+- Restrict cross-origin access to the exact deployed frontend URL.
 - Proxy `/api/*` to the backend when serving frontend and API on the same domain.
 
 ## Security Notes
 
 - Never commit database credentials, JWT secrets, or seeded account passwords.
 - Use separate MongoDB users for development and production.
-- Use a long random `JWT_SECRET`.
+- Use long random secrets for token signing.
 - Disable local-only seed/reset flags in production.
 - Rotate credentials immediately if they were ever shared publicly.
 
