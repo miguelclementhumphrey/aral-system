@@ -9,20 +9,39 @@
 export interface SchoolHeadProfile {
   id: string;
   schoolId: string;
-  firstName: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  firstName?: string | null;
   /** @nullable */
   middleName?: string | null;
-  lastName: string;
+  /** @nullable */
+  lastName?: string | null;
   designation: string;
+  /** @nullable */
+  designationOther?: string | null;
   position: string;
   contactNumber: string;
   email: string;
-  district: string;
-  division: string;
-  schoolYear: string;
+  /** @nullable */
+  district?: string | null;
+  /** @nullable */
+  division?: string | null;
+  /** @nullable */
+  schoolYear?: string | null;
   highestEducationalAttainment: string;
   yearsInService: string;
   fieldOfSpecialization: string;
+  /** @nullable */
+  fieldOfSpecializationOther?: string | null;
   trainingsAttended: string[];
+  /** @nullable */
+  literacyTrainingAttended?: string | null;
+  readingTrainingsAttended: string[];
+  /** @nullable */
+  englishTrainingAttended?: string | null;
+  englishTrainingsAttended: string[];
+  /** @nullable */
+  highestTrainingLevel?: string | null;
   isComplete: boolean;
 }

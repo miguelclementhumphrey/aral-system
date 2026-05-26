@@ -7,18 +7,26 @@
  */
 
 export interface SchoolHeadProfileInput {
-  firstName: string;
+  name?: string;
+  firstName?: string;
   middleName?: string;
-  lastName: string;
+  lastName?: string;
   designation: string;
+  designationOther?: string;
   position: string;
   contactNumber: string;
   email: string;
-  district: string;
-  division: string;
-  schoolYear: string;
+  district?: string;
+  division?: string;
+  schoolYear?: string;
   highestEducationalAttainment: string;
   yearsInService: string;
   fieldOfSpecialization: string;
+  fieldOfSpecializationOther?: string;
   trainingsAttended?: string[];
+  literacyTrainingAttended: string;
+  readingTrainingsAttended?: string[];
+  englishTrainingAttended: string;
+  englishTrainingsAttended?: string[];
+  highestTrainingLevel: string;
 }

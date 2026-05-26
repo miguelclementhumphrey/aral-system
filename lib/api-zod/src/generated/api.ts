@@ -69,7 +69,7 @@ export const AdminLoginResponse = zod.object({
  */
 export const SetPasswordBody = zod.object({
   "schoolId": zod.string(),
-  "tempCredential": zod.string(),
+  "tempCredential": zod.string().optional().describe('Optional fallback for first-login setup; bearer token is preferred.'),
   "newPassword": zod.string()
 })
 
@@ -225,6 +225,20 @@ export const AdminUpdateSchoolResponse = zod.object({
 
 
 /**
+ * Permanently deletes a school and related records. The school must be suspended first.
+ * @summary Delete a suspended school
+ */
+export const AdminDeleteSchoolParams = zod.object({
+  "schoolId": zod.coerce.string()
+})
+
+export const AdminDeleteSchoolResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string()
+})
+
+
+/**
  * @summary Activate a school
  */
 export const AdminActivateSchoolParams = zod.object({
@@ -309,20 +323,28 @@ export const AdminGetStatsResponse = zod.object({
 export const GetSchoolHeadProfileResponse = zod.object({
   "id": zod.string(),
   "schoolId": zod.string(),
-  "firstName": zod.string(),
+  "name": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
   "middleName": zod.string().nullish(),
-  "lastName": zod.string(),
+  "lastName": zod.string().nullish(),
   "designation": zod.string(),
+  "designationOther": zod.string().nullish(),
   "position": zod.string(),
   "contactNumber": zod.string(),
   "email": zod.string(),
-  "district": zod.string(),
-  "division": zod.string(),
-  "schoolYear": zod.string(),
+  "district": zod.string().nullish(),
+  "division": zod.string().nullish(),
+  "schoolYear": zod.string().nullish(),
   "highestEducationalAttainment": zod.string(),
   "yearsInService": zod.string(),
   "fieldOfSpecialization": zod.string(),
+  "fieldOfSpecializationOther": zod.string().nullish(),
   "trainingsAttended": zod.array(zod.string()),
+  "literacyTrainingAttended": zod.string().nullish(),
+  "readingTrainingsAttended": zod.array(zod.string()),
+  "englishTrainingAttended": zod.string().nullish(),
+  "englishTrainingsAttended": zod.array(zod.string()),
+  "highestTrainingLevel": zod.string().nullish(),
   "isComplete": zod.boolean()
 })
 
@@ -331,39 +353,55 @@ export const GetSchoolHeadProfileResponse = zod.object({
  * @summary Save school head profile
  */
 export const SaveSchoolHeadProfileBody = zod.object({
-  "firstName": zod.string(),
+  "name": zod.string().optional(),
+  "firstName": zod.string().optional(),
   "middleName": zod.string().optional(),
-  "lastName": zod.string(),
+  "lastName": zod.string().optional(),
   "designation": zod.string(),
+  "designationOther": zod.string().optional(),
   "position": zod.string(),
   "contactNumber": zod.string(),
   "email": zod.string(),
-  "district": zod.string(),
-  "division": zod.string(),
-  "schoolYear": zod.string(),
+  "district": zod.string().optional(),
+  "division": zod.string().optional(),
+  "schoolYear": zod.string().optional(),
   "highestEducationalAttainment": zod.string(),
   "yearsInService": zod.string(),
   "fieldOfSpecialization": zod.string(),
-  "trainingsAttended": zod.array(zod.string()).optional()
+  "fieldOfSpecializationOther": zod.string().optional(),
+  "trainingsAttended": zod.array(zod.string()).optional(),
+  "literacyTrainingAttended": zod.string(),
+  "readingTrainingsAttended": zod.array(zod.string()).optional(),
+  "englishTrainingAttended": zod.string(),
+  "englishTrainingsAttended": zod.array(zod.string()).optional(),
+  "highestTrainingLevel": zod.string()
 })
 
 export const SaveSchoolHeadProfileResponse = zod.object({
   "id": zod.string(),
   "schoolId": zod.string(),
-  "firstName": zod.string(),
+  "name": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
   "middleName": zod.string().nullish(),
-  "lastName": zod.string(),
+  "lastName": zod.string().nullish(),
   "designation": zod.string(),
+  "designationOther": zod.string().nullish(),
   "position": zod.string(),
   "contactNumber": zod.string(),
   "email": zod.string(),
-  "district": zod.string(),
-  "division": zod.string(),
-  "schoolYear": zod.string(),
+  "district": zod.string().nullish(),
+  "division": zod.string().nullish(),
+  "schoolYear": zod.string().nullish(),
   "highestEducationalAttainment": zod.string(),
   "yearsInService": zod.string(),
   "fieldOfSpecialization": zod.string(),
+  "fieldOfSpecializationOther": zod.string().nullish(),
   "trainingsAttended": zod.array(zod.string()),
+  "literacyTrainingAttended": zod.string().nullish(),
+  "readingTrainingsAttended": zod.array(zod.string()),
+  "englishTrainingAttended": zod.string().nullish(),
+  "englishTrainingsAttended": zod.array(zod.string()),
+  "highestTrainingLevel": zod.string().nullish(),
   "isComplete": zod.boolean()
 })
 
@@ -432,11 +470,15 @@ export const GetTeachersResponse = zod.array(GetTeachersResponseItem)
 /**
  * @summary Add a teacher to a grade level
  */
+export const createTeacherBodyPinRegExp = new RegExp('^[0-9]{4,12}$');
+
+
 export const CreateTeacherBody = zod.object({
   "firstName": zod.string(),
   "middleName": zod.string().optional(),
   "lastName": zod.string(),
-  "gradeLevelId": zod.string()
+  "gradeLevelId": zod.string(),
+  "pin": zod.string().regex(createTeacherBodyPinRegExp)
 })
 
 
@@ -464,21 +506,48 @@ export const GetTeacherResponse = zod.object({
 
 
 /**
+ * @summary Delete a teacher and connected records
+ */
+export const DeleteTeacherParams = zod.object({
+  "teacherId": zod.coerce.string()
+})
+
+export const DeleteTeacherResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string()
+})
+
+
+/**
  * @summary Get current teacher's profile
  */
 export const GetTeacherProfileResponse = zod.object({
   "id": zod.string(),
   "teacherId": zod.string(),
+  "name": zod.string().nullish(),
   "age": zod.number().nullish(),
   "sex": zod.string().nullish(),
   "dateOfBirth": zod.string().nullish(),
+  "designation": zod.string(),
+  "designationOther": zod.string().nullish(),
+  "position": zod.string(),
+  "email": zod.string(),
+  "district": zod.string().nullish(),
+  "division": zod.string().nullish(),
+  "schoolYear": zod.string().nullish(),
   "yearsInService": zod.string(),
   "highestEducationalAttainment": zod.string(),
   "fieldOfSpecialization": zod.string(),
+  "fieldOfSpecializationOther": zod.string().nullish(),
   "currentGradeLevel": zod.string(),
   "contactNumber": zod.string(),
   "mostSubjectHandled": zod.string(),
   "trainingsAttended": zod.array(zod.string()),
+  "literacyTrainingAttended": zod.string().nullish(),
+  "readingTrainingsAttended": zod.array(zod.string()),
+  "englishTrainingAttended": zod.string().nullish(),
+  "englishTrainingsAttended": zod.array(zod.string()),
+  "highestTrainingLevel": zod.string().nullish(),
   "isComplete": zod.boolean()
 })
 
@@ -487,31 +556,59 @@ export const GetTeacherProfileResponse = zod.object({
  * @summary Save teacher profile
  */
 export const SaveTeacherProfileBody = zod.object({
+  "name": zod.string().optional(),
   "age": zod.number().optional(),
   "sex": zod.string().optional(),
   "dateOfBirth": zod.string().optional(),
+  "designation": zod.string(),
+  "designationOther": zod.string().optional(),
+  "position": zod.string(),
+  "email": zod.string(),
+  "district": zod.string().optional(),
+  "division": zod.string().optional(),
+  "schoolYear": zod.string().optional(),
   "yearsInService": zod.string(),
   "highestEducationalAttainment": zod.string(),
   "fieldOfSpecialization": zod.string(),
+  "fieldOfSpecializationOther": zod.string().optional(),
   "currentGradeLevel": zod.string(),
   "contactNumber": zod.string(),
   "mostSubjectHandled": zod.string(),
-  "trainingsAttended": zod.array(zod.string()).optional()
+  "trainingsAttended": zod.array(zod.string()).optional(),
+  "literacyTrainingAttended": zod.string(),
+  "readingTrainingsAttended": zod.array(zod.string()).optional(),
+  "englishTrainingAttended": zod.string(),
+  "englishTrainingsAttended": zod.array(zod.string()).optional(),
+  "highestTrainingLevel": zod.string()
 })
 
 export const SaveTeacherProfileResponse = zod.object({
   "id": zod.string(),
   "teacherId": zod.string(),
+  "name": zod.string().nullish(),
   "age": zod.number().nullish(),
   "sex": zod.string().nullish(),
   "dateOfBirth": zod.string().nullish(),
+  "designation": zod.string(),
+  "designationOther": zod.string().nullish(),
+  "position": zod.string(),
+  "email": zod.string(),
+  "district": zod.string().nullish(),
+  "division": zod.string().nullish(),
+  "schoolYear": zod.string().nullish(),
   "yearsInService": zod.string(),
   "highestEducationalAttainment": zod.string(),
   "fieldOfSpecialization": zod.string(),
+  "fieldOfSpecializationOther": zod.string().nullish(),
   "currentGradeLevel": zod.string(),
   "contactNumber": zod.string(),
   "mostSubjectHandled": zod.string(),
   "trainingsAttended": zod.array(zod.string()),
+  "literacyTrainingAttended": zod.string().nullish(),
+  "readingTrainingsAttended": zod.array(zod.string()),
+  "englishTrainingAttended": zod.string().nullish(),
+  "englishTrainingsAttended": zod.array(zod.string()),
+  "highestTrainingLevel": zod.string().nullish(),
   "isComplete": zod.boolean()
 })
 

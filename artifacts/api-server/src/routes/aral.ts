@@ -6,6 +6,7 @@ import { Attendance } from "../models/Attendance";
 import { ReadingLevel } from "../models/ReadingLevel";
 import { Teacher } from "../models/Teacher";
 import { GradeLevel } from "../models/GradeLevel";
+import { isObjectId, pickFields } from "../lib/security";
 
 const router = Router();
 router.use(authenticate, requireRole("teacher", "school_head"));
@@ -22,7 +23,8 @@ router.get("/dashboard", async (req: AuthRequest, res: Response) => {
       gradeLevelId = req.query.gradeLevelId as string;
     }
     if (!gradeLevelId) { res.status(400).json({ error: "Grade level required" }); return; }
-    const gradeLevel = await GradeLevel.findById(gradeLevelId).lean();
+    if (!isObjectId(gradeLevelId)) { res.status(400).json({ error: "Invalid grade level ID" }); return; }
+    const gradeLevel = await GradeLevel.findOne({ _id: gradeLevelId, schoolId: req.user!.schoolId }).lean();
     if (!gradeLevel) { res.status(404).json({ error: "Grade level not found" }); return; }
     const aralLearners = await Learner.find({ gradeLevelId, isAral: true }).sort({ aralFlaggedAt: 1 }).lean();
     const learners = await Promise.all(aralLearners.map(async (l: any) => {
@@ -61,6 +63,9 @@ router.get("/dashboard", async (req: AuthRequest, res: Response) => {
 // GET /api/aral/learners/:learnerId/additional-profile
 router.get("/learners/:learnerId/additional-profile", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.learnerId)) { res.status(400).json({ error: "Invalid learner ID" }); return; }
+    const learner = await findAuthorizedAralLearner(req);
+    if (!learner) { res.status(404).json({ error: "Learner not found" }); return; }
     const profile = await AralAdditionalProfile.findOne({ learnerId: req.params.learnerId }).lean();
     if (!profile) {
       res.json({
@@ -84,11 +89,17 @@ router.get("/learners/:learnerId/additional-profile", async (req: AuthRequest, r
 // POST /api/aral/learners/:learnerId/additional-profile
 router.post("/learners/:learnerId/additional-profile", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.learnerId)) { res.status(400).json({ error: "Invalid learner ID" }); return; }
+    const learner = await findAuthorizedAralLearner(req);
+    if (!learner) { res.status(404).json({ error: "Learner not found" }); return; }
     const { frequencyOfAbsenteeism, interventions, recommendedAssessment, otherObservations } = req.body;
+    const update = pickFields({ frequencyOfAbsenteeism, interventions, recommendedAssessment, otherObservations }, [
+      "frequencyOfAbsenteeism", "interventions", "recommendedAssessment", "otherObservations",
+    ] as const);
     const isComplete = !!(frequencyOfAbsenteeism && interventions?.length > 0);
     const profile = await AralAdditionalProfile.findOneAndUpdate(
       { learnerId: req.params.learnerId },
-      { learnerId: req.params.learnerId, frequencyOfAbsenteeism, interventions: interventions || [], recommendedAssessment, otherObservations, isComplete },
+      { learnerId: req.params.learnerId, ...update, interventions: Array.isArray(interventions) ? interventions : [], isComplete },
       { upsert: true, new: true }
     ).lean();
     res.json({
@@ -102,5 +113,21 @@ router.post("/learners/:learnerId/additional-profile", async (req: AuthRequest, 
     res.status(500).json({ error: "Server error" });
   }
 });
+
+async function findAuthorizedAralLearner(req: AuthRequest) {
+  if (req.user!.role === "teacher") {
+    return Learner.findOne({
+      _id: req.params.learnerId,
+      teacherId: req.user!.teacherId,
+      isAral: true,
+    }).lean();
+  }
+
+  return Learner.findOne({
+    _id: req.params.learnerId,
+    schoolId: req.user!.schoolId,
+    isAral: true,
+  }).lean();
+}
 
 export default router;

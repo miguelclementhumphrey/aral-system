@@ -11,4 +11,6 @@ export interface TeacherInput {
   middleName?: string;
   lastName: string;
   gradeLevelId: string;
+  /** @pattern ^[0-9]{4,12}$ */
+  pin: string;
 }

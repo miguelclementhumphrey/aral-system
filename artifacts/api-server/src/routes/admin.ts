@@ -5,6 +5,12 @@ import { School } from "../models/School";
 import { Teacher } from "../models/Teacher";
 import { Learner } from "../models/Learner";
 import { GradeLevel } from "../models/GradeLevel";
+import { TeacherProfile } from "../models/TeacherProfile";
+import { SchoolHeadProfile } from "../models/SchoolHeadProfile";
+import { Attendance } from "../models/Attendance";
+import { ReadingLevel } from "../models/ReadingLevel";
+import { AralAdditionalProfile } from "../models/AralAdditionalProfile";
+import { isObjectId, pickFields } from "../lib/security";
 
 const router = Router();
 router.use(authenticate, requireRole("super_admin"));
@@ -60,7 +66,7 @@ router.post("/schools", async (req: AuthRequest, res: Response) => {
   try {
     const exists = await School.findOne({ schoolCode });
     if (exists) {
-      res.status(400).json({ error: `School code "${schoolCode}" is already in use.` });
+      res.status(400).json({ error: `School ID "${schoolCode}" is already in use.` });
       return;
     }
     const school = await School.create({ name, schoolCode, division, district, region, schoolHeadName, schoolHeadContact, status: "pending" });
@@ -79,6 +85,7 @@ router.post("/schools", async (req: AuthRequest, res: Response) => {
 // GET /api/admin/schools/:schoolId
 router.get("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.schoolId)) { res.status(400).json({ error: "Invalid school ID" }); return; }
     const school = await School.findById(req.params.schoolId).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
     const stats = await getSchoolStats(req.params.schoolId as string);
@@ -97,7 +104,9 @@ router.get("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
 // PATCH /api/admin/schools/:schoolId
 router.patch("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
   try {
-    const school = await School.findByIdAndUpdate(req.params.schoolId, { $set: req.body }, { new: true }).lean();
+    if (!isObjectId(req.params.schoolId)) { res.status(400).json({ error: "Invalid school ID" }); return; }
+    const update = pickFields(req.body, ["name", "schoolCode", "division", "district", "region", "schoolHeadName", "schoolHeadContact", "status"] as const);
+    const school = await School.findByIdAndUpdate(req.params.schoolId, { $set: update }, { new: true }).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
     const stats = await getSchoolStats(req.params.schoolId as string);
     res.json({
@@ -112,9 +121,48 @@ router.patch("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
   }
 });
 
+// DELETE /api/admin/schools/:schoolId
+router.delete("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
+  try {
+    if (!isObjectId(req.params.schoolId)) { res.status(400).json({ error: "Invalid school ID" }); return; }
+
+    const school = await School.findById(req.params.schoolId).lean();
+    if (!school) { res.status(404).json({ error: "School not found" }); return; }
+    if (school.status !== "suspended") {
+      res.status(409).json({ error: "Only suspended schools can be deleted." });
+      return;
+    }
+
+    const schoolId = req.params.schoolId;
+    const [teachers, learners] = await Promise.all([
+      Teacher.find({ schoolId }).select("_id").lean(),
+      Learner.find({ schoolId }).select("_id").lean(),
+    ]);
+    const teacherIds = teachers.map((teacher: any) => teacher._id);
+    const learnerIds = learners.map((learner: any) => learner._id);
+
+    await Promise.all([
+      Attendance.deleteMany({ schoolId }),
+      ReadingLevel.deleteMany({ schoolId }),
+      AralAdditionalProfile.deleteMany({ learnerId: { $in: learnerIds } }),
+      TeacherProfile.deleteMany({ teacherId: { $in: teacherIds } }),
+      SchoolHeadProfile.deleteMany({ schoolId }),
+      Learner.deleteMany({ schoolId }),
+      Teacher.deleteMany({ schoolId }),
+      GradeLevel.deleteMany({ schoolId }),
+    ]);
+
+    await School.deleteOne({ _id: schoolId });
+    res.json({ success: true, message: "Suspended school and related records deleted." });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // POST /api/admin/schools/:schoolId/activate
 router.post("/schools/:schoolId/activate", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.schoolId)) { res.status(400).json({ error: "Invalid school ID" }); return; }
     const school = await School.findByIdAndUpdate(req.params.schoolId, { status: "active" }, { new: true }).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
     const stats = await getSchoolStats(req.params.schoolId as string);
@@ -133,6 +181,7 @@ router.post("/schools/:schoolId/activate", async (req: AuthRequest, res: Respons
 // POST /api/admin/schools/:schoolId/suspend
 router.post("/schools/:schoolId/suspend", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.schoolId)) { res.status(400).json({ error: "Invalid school ID" }); return; }
     const school = await School.findByIdAndUpdate(req.params.schoolId, { status: "suspended" }, { new: true }).lean();
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
     const stats = await getSchoolStats(req.params.schoolId as string);
@@ -151,9 +200,10 @@ router.post("/schools/:schoolId/suspend", async (req: AuthRequest, res: Response
 // POST /api/admin/schools/:schoolId/reset-password
 router.post("/schools/:schoolId/reset-password", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.schoolId)) { res.status(400).json({ error: "Invalid school ID" }); return; }
     const school = await School.findByIdAndUpdate(req.params.schoolId, { isFirstLogin: true, passwordHash: undefined, failedAttempts: 0, lockedUntil: undefined }, { new: true });
     if (!school) { res.status(404).json({ error: "School not found" }); return; }
-    res.json({ success: true, message: `Password reset. School Head should use School Code: ${school.schoolCode} to login.` });
+    res.json({ success: true, message: `Password reset. School Head should use School ID: ${school.schoolCode} to login.` });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }

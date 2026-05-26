@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { authenticate, requireRole, AuthRequest } from "../middlewares/auth";
 import { Learner } from "../models/Learner";
 import { Teacher } from "../models/Teacher";
-import { TeacherProfile } from "../models/TeacherProfile";
+import { isObjectId, pickFields } from "../lib/security";
 
 const router = Router();
 router.use(authenticate, requireRole("teacher"));
@@ -48,7 +48,15 @@ router.post("/", async (req: AuthRequest, res: Response) => {
       res.status(403).json({ error: "Complete your profile to add learners." });
       return;
     }
-    const { firstName, lastName, lrn, dateOfBirth, sex, guardianName, guardianContact, address } = req.body;
+    const allowedFields = [
+      "firstName", "middleName", "lastName", "lrn", "dateOfBirth", "sex", "guardianName", "guardianContact",
+      "address", "isAral", "readingLevelEnglish", "readingLevelFilipino", "governmentBenefits", "parentsEducation",
+      "modeOfTransportation", "distanceFromSchool", "previousTransfers", "letterRecognition",
+      "letterSoundCorrespondence", "wordRecognition", "homeLiteracyEnvironment", "parentalSupport",
+      "classroomLearningEnvironment", "languageConsiderations", "suggestedInterventions",
+    ] as const;
+    const input = pickFields(req.body, allowedFields);
+    const { firstName, lastName, lrn, dateOfBirth, sex, guardianName, guardianContact, address } = input;
     if (!firstName || !lastName || !lrn || !dateOfBirth || !sex || !guardianName || !guardianContact || !address) {
       res.status(400).json({ error: "Required learner fields are missing." });
       return;
@@ -60,10 +68,11 @@ router.post("/", async (req: AuthRequest, res: Response) => {
       // just warn via the response body but allow
     }
     const learner = await Learner.create({
-      ...req.body,
+      ...input,
       schoolId: req.user!.schoolId,
       gradeLevelId: teacher.gradeLevelId,
       teacherId,
+      aralFlaggedAt: input.isAral ? new Date() : undefined,
       profileComplete: true,
     });
     res.status(201).json(formatLearner(learner));
@@ -75,6 +84,7 @@ router.post("/", async (req: AuthRequest, res: Response) => {
 // GET /api/learners/:learnerId
 router.get("/:learnerId", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.learnerId)) { res.status(400).json({ error: "Invalid learner ID" }); return; }
     const learner = await Learner.findOne({ _id: req.params.learnerId, teacherId: req.user!.teacherId }).lean();
     if (!learner) { res.status(404).json({ error: "Learner not found" }); return; }
     res.json(formatLearner(learner));
@@ -86,9 +96,17 @@ router.get("/:learnerId", async (req: AuthRequest, res: Response) => {
 // PATCH /api/learners/:learnerId
 router.patch("/:learnerId", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.learnerId)) { res.status(400).json({ error: "Invalid learner ID" }); return; }
+    const update = pickFields(req.body, [
+      "firstName", "middleName", "lastName", "dateOfBirth", "sex", "guardianName", "guardianContact",
+      "address", "readingLevelEnglish", "readingLevelFilipino", "governmentBenefits", "parentsEducation",
+      "modeOfTransportation", "distanceFromSchool", "previousTransfers", "letterRecognition",
+      "letterSoundCorrespondence", "wordRecognition", "homeLiteracyEnvironment", "parentalSupport",
+      "classroomLearningEnvironment", "languageConsiderations", "suggestedInterventions",
+    ] as const);
     const learner = await Learner.findOneAndUpdate(
       { _id: req.params.learnerId, teacherId: req.user!.teacherId },
-      { $set: req.body },
+      { $set: update },
       { new: true }
     ).lean();
     if (!learner) { res.status(404).json({ error: "Learner not found" }); return; }
@@ -101,6 +119,7 @@ router.patch("/:learnerId", async (req: AuthRequest, res: Response) => {
 // POST /api/learners/:learnerId/flag-aral
 router.post("/:learnerId/flag-aral", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.learnerId)) { res.status(400).json({ error: "Invalid learner ID" }); return; }
     const learner = await Learner.findOne({ _id: req.params.learnerId, teacherId: req.user!.teacherId });
     if (!learner) { res.status(404).json({ error: "Learner not found" }); return; }
     if (learner.isAral) {

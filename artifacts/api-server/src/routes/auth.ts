@@ -4,8 +4,9 @@ import { School } from "../models/School";
 import { Teacher } from "../models/Teacher";
 import { Admin } from "../models/Admin";
 import { GradeLevel } from "../models/GradeLevel";
-import { signToken } from "../lib/jwt";
+import { signToken, verifyToken } from "../lib/jwt";
 import { authenticate, AuthRequest } from "../middlewares/auth";
+import { isObjectId } from "../lib/security";
 
 const router = Router();
 
@@ -23,6 +24,35 @@ router.get("/schools", async (req: Request, res: Response) => {
       hasTeachers: (countMap.get(s._id.toString()) ?? 0) > 0,
     }));
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// GET /api/auth/schools/:schoolId/teachers - public teacher list for login
+router.get("/schools/:schoolId/teachers", async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    if (!isObjectId(schoolId)) {
+      res.status(400).json({ error: "Invalid school ID" });
+      return;
+    }
+
+    const school = await School.findOne({ _id: schoolId, status: "active" }).lean();
+    if (!school) {
+      res.status(404).json({ error: "School not found" });
+      return;
+    }
+
+    const teachers = await Teacher.find({ schoolId, isActive: true })
+      .select("firstName middleName lastName")
+      .sort({ lastName: 1, firstName: 1 })
+      .lean();
+
+    res.json(teachers.map((teacher: any) => ({
+      id: teacher._id.toString(),
+      name: `${teacher.lastName}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`,
+    })));
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
@@ -75,6 +105,10 @@ router.post("/login", async (req: Request, res: Response) => {
   const { schoolId, credential, role, teacherId } = req.body;
   if (!schoolId || !credential || !role) {
     res.status(400).json({ error: "Missing required fields" });
+    return;
+  }
+  if (!isObjectId(schoolId)) {
+    res.status(400).json({ error: "Invalid school ID" });
     return;
   }
   try {
@@ -143,20 +177,13 @@ router.post("/login", async (req: Request, res: Response) => {
     }
 
     if (role === "teacher") {
-      let teacher = teacherId
-        ? await Teacher.findOne({ _id: teacherId, schoolId })
-        : null;
-
-      if (!teacher) {
-        const activeTeachers = await Teacher.find({ schoolId, isActive: true });
-        for (const candidate of activeTeachers) {
-          if (await candidate.comparePin(credential)) {
-            teacher = candidate;
-            break;
-          }
-        }
+      const loginPin = String(credential).trim();
+      if (!isObjectId(teacherId)) {
+        res.status(400).json({ error: "Teacher is required." });
+        return;
       }
 
+      const teacher = await Teacher.findOne({ _id: teacherId, schoolId });
       if (!teacher) {
         res.status(401).json({ error: "Teacher not found or PIN is incorrect." });
         return;
@@ -165,7 +192,13 @@ router.post("/login", async (req: Request, res: Response) => {
         res.status(401).json({ error: "Account not yet activated by School Head." });
         return;
       }
-      if (teacherId && !(await teacher.comparePin(credential))) {
+      const pinIsValid = await teacher.comparePin(loginPin);
+      const legacyPinIsValid = !pinIsValid && teacher.pin === loginPin;
+      if (legacyPinIsValid) {
+        teacher.pinHash = await bcrypt.hash(loginPin, 10);
+        await teacher.save();
+      }
+      if (!pinIsValid && !legacyPinIsValid) {
         res.status(401).json({ error: "Incorrect PIN." });
         return;
       }
@@ -195,8 +228,12 @@ router.post("/login", async (req: Request, res: Response) => {
 // POST /api/auth/set-password
 router.post("/set-password", async (req: Request, res: Response) => {
   const { schoolId, tempCredential, newPassword } = req.body;
-  if (!schoolId || !tempCredential || !newPassword) {
+  if (!schoolId || !newPassword) {
     res.status(400).json({ error: "Missing required fields" });
+    return;
+  }
+  if (!isObjectId(schoolId)) {
+    res.status(400).json({ error: "Invalid school ID" });
     return;
   }
   if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[^a-zA-Z0-9]/.test(newPassword)) {
@@ -205,7 +242,18 @@ router.post("/set-password", async (req: Request, res: Response) => {
   }
   try {
     const school = await School.findById(schoolId);
-    if (!school || tempCredential !== school.schoolCode) {
+    const authHeader = req.headers.authorization;
+    const setupToken = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : "";
+    const tokenMatchesSchool = Boolean(setupToken && (() => {
+      try {
+        const payload = verifyToken(setupToken);
+        return payload.role === "school_head" && payload.schoolId === schoolId;
+      } catch {
+        return false;
+      }
+    })());
+
+    if (!school || (tempCredential !== school.schoolCode && !tokenMatchesSchool)) {
       res.status(401).json({ error: "Invalid credentials" });
       return;
     }

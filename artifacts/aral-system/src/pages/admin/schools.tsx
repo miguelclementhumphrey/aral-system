@@ -35,7 +35,7 @@ import { Plus, Search, Eye } from "lucide-react";
 
 const createSchoolSchema = z.object({
   name: z.string().min(1, "School name is required"),
-  schoolCode: z.string().min(1, "School code is required"),
+  schoolCode: z.string().min(1, "School ID is required"),
   division: z.string().min(1, "Division is required"),
   district: z.string().min(1, "District is required"),
   region: z.string().min(1, "Region is required"),
@@ -135,7 +135,7 @@ export default function AdminSchools() {
                   )} />
                   <FormField control={form.control} name="schoolCode" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>School Code</FormLabel>
+                      <FormLabel>School ID</FormLabel>
                       <FormControl><Input placeholder="e.g. 301234" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -197,7 +197,7 @@ export default function AdminSchools() {
       <div className="flex items-center space-x-2 bg-card border rounded-md px-3 py-2 max-w-sm">
         <Search className="w-4 h-4 text-muted-foreground" />
         <Input 
-          placeholder="Search by school name or code..." 
+          placeholder="Search by school name or ID..." 
           className="border-0 focus-visible:ring-0 p-0 h-8"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -208,7 +208,7 @@ export default function AdminSchools() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Code</TableHead>
+              <TableHead>School ID</TableHead>
               <TableHead>School Name</TableHead>
               <TableHead>School Head</TableHead>
               <TableHead>Status</TableHead>

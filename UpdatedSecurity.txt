@@ -1,0 +1,58 @@
+Security Updates Summary
+
+Removed real secrets and credentials from public documentation.
+
+Moved sensitive values into .env files.
+
+Updated .env.example files to contain placeholders only.
+
+Confirmed .env is ignored by Git so database URLs, JWT secrets, and passwords are not pushed.
+
+Hardened JWT authentication:
+
+JWT uses a required strong secret.
+Tokens are validated before protected API access.
+Role-based access checks are enforced on protected routes.
+Improved authorization:
+
+Admin routes are protected.
+School Head, Teacher, and Learner access is scoped by role.
+Users are restricted from accessing records outside their allowed scope.
+Improved API security:
+
+Added request rate limiting.
+Added stricter CORS configuration using environment variables.
+Added safer error handling so internal server details are not exposed.
+Added request body size limits.
+Added security headers.
+Disabled unnecessary server identity exposure in code.
+Improved database safety:
+
+Added ObjectId validation before database queries.
+Restricted update operations to approved fields only.
+Reduced risk of unauthorized read, edit, or delete operations.
+Improved login security:
+
+Removed unsafe teacher PIN scanning behavior.
+Teacher login now requires selecting a specific teacher account.
+Admin credentials are loaded from environment variables instead of being hardcoded.
+Improved frontend security:
+
+Auth token storage moved from localStorage to sessionStorage.
+Protected frontend routes redirect unauthorized users.
+No unsafe HTML rendering was added.
+Improved production readiness:
+
+Removed public sample credentials from README.
+Added safer setup documentation.
+Added production checks to prevent unsafe demo seeding.
+Ran security audit with no known vulnerabilities found.
+Confirmed API and frontend production builds pass.
+Manual Setup Still Needed
+
+Keep your real .env private.
+Use a strong JWT_SECRET.
+Restrict MongoDB Atlas network access if possible.
+Use HTTPS in production.
+Set CORS_ORIGIN to your real frontend domain.
+Restart the API server after security changes.

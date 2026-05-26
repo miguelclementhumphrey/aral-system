@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
 import { CalendarDays, Check, X, Clock } from "lucide-react";
 
@@ -124,16 +124,16 @@ export default function TeacherAttendance() {
 
       <div className="flex items-center gap-4">
         <Label>Week:</Label>
-        <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-          <SelectTrigger className="w-64">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {weeks.map(w => (
-              <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={selectedWeek}
+          onValueChange={setSelectedWeek}
+          className="w-64"
+          searchPlaceholder="Search weeks..."
+          options={weeks.map((week) => ({
+            value: week.value,
+            label: week.label,
+          }))}
+        />
       </div>
 
       <div className="flex gap-3 text-xs">

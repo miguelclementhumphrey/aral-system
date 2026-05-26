@@ -16,7 +16,7 @@ DEMO_SCHOOL_PASSWORD=your-local-school-password
 DEMO_TEACHER_PIN=your-local-six-digit-pin
 ```
 
-When demo data is enabled, check the API startup logs for the generated/seeded local login details.
+When demo data is enabled, set `DEMO_SCHOOL_PASSWORD` and `DEMO_TEACHER_PIN` yourself if you need predictable local logins.
 
 Before pushing or sharing the repository, confirm that these files are not staged:
 

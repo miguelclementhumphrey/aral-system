@@ -3,6 +3,7 @@ import { authenticate, requireRole, AuthRequest } from "../middlewares/auth";
 import { Attendance } from "../models/Attendance";
 import { Learner } from "../models/Learner";
 import { Teacher } from "../models/Teacher";
+import { isObjectId, pickFields } from "../lib/security";
 
 const router = Router();
 router.use(authenticate, requireRole("teacher"));
@@ -52,6 +53,7 @@ router.post("/", async (req: AuthRequest, res: Response) => {
       res.status(400).json({ error: "learnerId and weekStartDate are required" });
       return;
     }
+    if (!isObjectId(learnerId)) { res.status(400).json({ error: "Invalid learner ID" }); return; }
     // Prevent future dates
     const now = new Date();
     const weekStart = new Date(weekStartDate);
@@ -61,8 +63,11 @@ router.post("/", async (req: AuthRequest, res: Response) => {
     }
     const teacher = await Teacher.findById(req.user!.teacherId);
     if (!teacher) { res.status(404).json({ error: "Teacher not found" }); return; }
+    const learner = await Learner.findOne({ _id: learnerId, teacherId: req.user!.teacherId, isAral: true }).lean();
+    if (!learner) { res.status(404).json({ error: "Learner not found" }); return; }
     const weekEndDate = getWeekEnd(weekStartDate);
-    const updates = { monday, tuesday, wednesday, thursday, friday, weekEndDate, gradeLevelId: teacher.gradeLevelId, schoolId: req.user!.schoolId };
+    const attendanceFields = pickFields({ monday, tuesday, wednesday, thursday, friday }, ["monday", "tuesday", "wednesday", "thursday", "friday"] as const);
+    const updates = { ...attendanceFields, weekEndDate, gradeLevelId: teacher.gradeLevelId, schoolId: req.user!.schoolId };
     const totalAbsences = countAbsences(updates);
     const record = await Attendance.findOneAndUpdate(
       { learnerId, weekStartDate },

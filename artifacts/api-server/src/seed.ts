@@ -14,6 +14,14 @@ import { logger } from "./lib/logger";
 
 export async function seedAdmin() {
   try {
+    if (process.env.NODE_ENV === "production" && process.env.ADMIN_UPDATE_PASSWORD_ON_START === "true") {
+      throw new Error("ADMIN_UPDATE_PASSWORD_ON_START must not be enabled in production.");
+    }
+
+    if (process.env.NODE_ENV === "production" && process.env.SEED_DEMO_DATA === "true") {
+      throw new Error("SEED_DEMO_DATA must not be enabled in production.");
+    }
+
     const username = process.env.ADMIN_USERNAME?.trim();
     const password = process.env.ADMIN_PASSWORD?.trim();
 
@@ -279,8 +287,6 @@ async function seedDemoData() {
   logger.info(
     {
       school: school.name,
-      schoolHeadLogin: { school: school.name, password: schoolPassword },
-      teacherLogin: { school: school.name, pin: teacherPin },
     },
     "Demo school data seeded",
   );

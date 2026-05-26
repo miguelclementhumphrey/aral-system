@@ -71,7 +71,8 @@ export interface AdminLoginInput {
 
 export interface SetPasswordInput {
   schoolId: string;
-  tempCredential: string;
+  /** Optional fallback for first-login setup; bearer token is preferred. */
+  tempCredential?: string;
   newPassword: string;
 }
 
@@ -140,39 +141,66 @@ export interface SchoolUpdate {
 export interface SchoolHeadProfile {
   id: string;
   schoolId: string;
-  firstName: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  firstName?: string | null;
   /** @nullable */
   middleName?: string | null;
-  lastName: string;
+  /** @nullable */
+  lastName?: string | null;
   designation: string;
+  /** @nullable */
+  designationOther?: string | null;
   position: string;
   contactNumber: string;
   email: string;
-  district: string;
-  division: string;
-  schoolYear: string;
+  /** @nullable */
+  district?: string | null;
+  /** @nullable */
+  division?: string | null;
+  /** @nullable */
+  schoolYear?: string | null;
   highestEducationalAttainment: string;
   yearsInService: string;
   fieldOfSpecialization: string;
+  /** @nullable */
+  fieldOfSpecializationOther?: string | null;
   trainingsAttended: string[];
+  /** @nullable */
+  literacyTrainingAttended?: string | null;
+  readingTrainingsAttended: string[];
+  /** @nullable */
+  englishTrainingAttended?: string | null;
+  englishTrainingsAttended: string[];
+  /** @nullable */
+  highestTrainingLevel?: string | null;
   isComplete: boolean;
 }
 
 export interface SchoolHeadProfileInput {
-  firstName: string;
+  name?: string;
+  firstName?: string;
   middleName?: string;
-  lastName: string;
+  lastName?: string;
   designation: string;
+  designationOther?: string;
   position: string;
   contactNumber: string;
   email: string;
-  district: string;
-  division: string;
-  schoolYear: string;
+  district?: string;
+  division?: string;
+  schoolYear?: string;
   highestEducationalAttainment: string;
   yearsInService: string;
   fieldOfSpecialization: string;
+  fieldOfSpecializationOther?: string;
   trainingsAttended?: string[];
+  literacyTrainingAttended: string;
+  readingTrainingsAttended?: string[];
+  englishTrainingAttended: string;
+  englishTrainingsAttended?: string[];
+  highestTrainingLevel: string;
 }
 
 export interface GradeLevel {
@@ -211,38 +239,77 @@ export interface TeacherInput {
   middleName?: string;
   lastName: string;
   gradeLevelId: string;
+  /** @pattern ^[0-9]{4,12}$ */
+  pin: string;
 }
 
 export interface TeacherProfile {
   id: string;
   teacherId: string;
   /** @nullable */
+  name?: string | null;
+  /** @nullable */
   age?: number | null;
   /** @nullable */
   sex?: string | null;
   /** @nullable */
   dateOfBirth?: string | null;
+  designation: string;
+  /** @nullable */
+  designationOther?: string | null;
+  position: string;
+  email: string;
+  /** @nullable */
+  district?: string | null;
+  /** @nullable */
+  division?: string | null;
+  /** @nullable */
+  schoolYear?: string | null;
   yearsInService: string;
   highestEducationalAttainment: string;
   fieldOfSpecialization: string;
+  /** @nullable */
+  fieldOfSpecializationOther?: string | null;
   currentGradeLevel: string;
   contactNumber: string;
   mostSubjectHandled: string;
   trainingsAttended: string[];
+  /** @nullable */
+  literacyTrainingAttended?: string | null;
+  readingTrainingsAttended: string[];
+  /** @nullable */
+  englishTrainingAttended?: string | null;
+  englishTrainingsAttended: string[];
+  /** @nullable */
+  highestTrainingLevel?: string | null;
   isComplete: boolean;
 }
 
 export interface TeacherProfileInput {
+  name?: string;
   age?: number;
   sex?: string;
   dateOfBirth?: string;
+  designation: string;
+  designationOther?: string;
+  position: string;
+  email: string;
+  district?: string;
+  division?: string;
+  schoolYear?: string;
   yearsInService: string;
   highestEducationalAttainment: string;
   fieldOfSpecialization: string;
+  fieldOfSpecializationOther?: string;
   currentGradeLevel: string;
   contactNumber: string;
   mostSubjectHandled: string;
   trainingsAttended?: string[];
+  literacyTrainingAttended: string;
+  readingTrainingsAttended?: string[];
+  englishTrainingAttended: string;
+  englishTrainingsAttended?: string[];
+  highestTrainingLevel: string;
 }
 
 export interface Learner {

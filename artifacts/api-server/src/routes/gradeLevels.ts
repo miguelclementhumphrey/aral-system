@@ -5,6 +5,7 @@ import { Teacher } from "../models/Teacher";
 import { Learner } from "../models/Learner";
 import { School } from "../models/School";
 import { SchoolHeadProfile } from "../models/SchoolHeadProfile";
+import { isObjectId } from "../lib/security";
 
 const router = Router();
 router.use(authenticate, requireRole("school_head"));
@@ -57,6 +58,7 @@ router.post("/", async (req: AuthRequest, res: Response) => {
 // GET /api/grade-levels/:gradeLevelId
 router.get("/:gradeLevelId", async (req: AuthRequest, res: Response) => {
   try {
+    if (!isObjectId(req.params.gradeLevelId)) { res.status(400).json({ error: "Invalid grade level ID" }); return; }
     const gl = await GradeLevel.findOne({ _id: req.params.gradeLevelId, schoolId: req.user!.schoolId }).lean();
     if (!gl) { res.status(404).json({ error: "Grade level not found" }); return; }
     const [teachersCount, learnersCount, aralLearnersCount] = await Promise.all([

@@ -1,10 +1,16 @@
-import { useGetAralDashboard, useGetAralAdditionalProfile, useSaveAralAdditionalProfile, getGetAralAdditionalProfileQueryKey } from "@workspace/api-client-react";
-import { useState } from "react";
+import {
+  useGetAralDashboard,
+  useGetAralAdditionalProfile,
+  useSaveAralAdditionalProfile,
+  getGetAralAdditionalProfileQueryKey,
+  getGetAralDashboardQueryKey,
+} from "@workspace/api-client-react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -48,15 +54,14 @@ function ProfileModal({
   const [interventions, setInterventions] = useState<string[]>([]);
   const [recommended, setRecommended] = useState("");
   const [observations, setObservations] = useState("");
-  const [initialized, setInitialized] = useState(false);
 
-  if (profile && !initialized) {
+  useEffect(() => {
+    if (!open || !profile) return;
     setFreq(profile.frequencyOfAbsenteeism ?? "");
     setInterventions(profile.interventions ?? []);
     setRecommended(profile.recommendedAssessment ?? "");
     setObservations(profile.otherObservations ?? "");
-    setInitialized(true);
-  }
+  }, [open, profile, learnerId]);
 
   const toggle = (item: string) =>
     setInterventions(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
@@ -72,16 +77,17 @@ function ProfileModal({
           otherObservations: observations || undefined,
         },
       });
+      queryClient.invalidateQueries({ queryKey: getGetAralAdditionalProfileQueryKey(learnerId) });
+      queryClient.invalidateQueries({ queryKey: getGetAralDashboardQueryKey() });
       toast({ title: "Profile saved", description: `ARAL profile for ${learnerName} has been updated.` });
       onClose();
-      setInitialized(false);
     } catch (e: any) {
       toast({ title: "Failed to save", description: e.message, variant: "destructive" });
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { onClose(); setInitialized(false); } }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>ARAL Profile — {learnerName}</DialogTitle>
@@ -93,15 +99,18 @@ function ProfileModal({
           <div className="space-y-6 pt-2">
             <div>
               <Label className="mb-2 block">Frequency of Absenteeism</Label>
-              <Select value={freq} onValueChange={setFreq}>
-                <SelectTrigger><SelectValue placeholder="Select frequency" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rarely">Rarely (1-2 times)</SelectItem>
-                  <SelectItem value="sometimes">Sometimes (3-5 times)</SelectItem>
-                  <SelectItem value="often">Often (6-10 times)</SelectItem>
-                  <SelectItem value="frequently">Frequently (11+ times)</SelectItem>
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={freq}
+                onValueChange={setFreq}
+                placeholder="Select frequency"
+                searchPlaceholder="Search frequency..."
+                options={[
+                  { value: "rarely", label: "Rarely (1-2 times)" },
+                  { value: "sometimes", label: "Sometimes (3-5 times)" },
+                  { value: "often", label: "Often (6-10 times)" },
+                  { value: "frequently", label: "Frequently (11+ times)" },
+                ]}
+              />
             </div>
 
             <div>
@@ -122,15 +131,18 @@ function ProfileModal({
 
             <div>
               <Label className="mb-2 block">Recommended Assessment</Label>
-              <Select value={recommended} onValueChange={setRecommended}>
-                <SelectTrigger><SelectValue placeholder="Select assessment" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Phil-IRI">Phil-IRI Assessment</SelectItem>
-                  <SelectItem value="EGRA">Early Grade Reading Assessment (EGRA)</SelectItem>
-                  <SelectItem value="ORCA">Oral Reading and Comprehension Assessment</SelectItem>
-                  <SelectItem value="Other">Other Formal Assessment</SelectItem>
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={recommended}
+                onValueChange={setRecommended}
+                placeholder="Select assessment"
+                searchPlaceholder="Search assessments..."
+                options={[
+                  { value: "Phil-IRI", label: "Phil-IRI Assessment" },
+                  { value: "EGRA", label: "Early Grade Reading Assessment (EGRA)" },
+                  { value: "ORCA", label: "Oral Reading and Comprehension Assessment" },
+                  { value: "Other", label: "Other Formal Assessment" },
+                ]}
+              />
             </div>
 
             <div>
@@ -144,7 +156,7 @@ function ProfileModal({
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => { onClose(); setInitialized(false); }}>Cancel</Button>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button onClick={handleSave} disabled={saveProfile.isPending}>
                 {saveProfile.isPending ? "Saving..." : "Save Profile"}
               </Button>
@@ -157,11 +169,21 @@ function ProfileModal({
 }
 
 export default function TeacherAralDashboard() {
-  const { data: dashboard, isLoading } = useGetAralDashboard({});
+  const { data: dashboard, isLoading, isError, error } = useGetAralDashboard({
+    query: { queryKey: getGetAralDashboardQueryKey(), retry: false },
+  });
   const [selectedLearner, setSelectedLearner] = useState<{ id: string; name: string } | null>(null);
 
   if (isLoading) {
     return <div className="p-8 flex items-center justify-center min-h-[50vh]">Loading ARAL dashboard...</div>;
+  }
+
+  if (isError) {
+    return (
+      <div className="p-8 text-destructive">
+        Unable to load ARAL dashboard: {error instanceof Error ? error.message : "Please try again."}
+      </div>
+    );
   }
 
   if (!dashboard) {

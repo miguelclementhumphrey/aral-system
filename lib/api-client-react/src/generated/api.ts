@@ -877,6 +877,77 @@ export const useAdminUpdateSchool = <TError = ErrorType<unknown>,
       return useMutation(getAdminUpdateSchoolMutationOptions(options));
     }
 
+export const getAdminDeleteSchoolUrl = (schoolId: string,) => {
+
+
+
+
+  return `/api/admin/schools/${schoolId}`
+}
+
+/**
+ * Permanently deletes a school and related records. The school must be suspended first.
+ * @summary Delete a suspended school
+ */
+export const adminDeleteSchool = async (schoolId: string, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getAdminDeleteSchoolUrl(schoolId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getAdminDeleteSchoolMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteSchool>>, TError,{schoolId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDeleteSchool>>, TError,{schoolId: string}, TContext> => {
+
+const mutationKey = ['adminDeleteSchool'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDeleteSchool>>, {schoolId: string}> = (props) => {
+          const {schoolId} = props ?? {};
+
+          return  adminDeleteSchool(schoolId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminDeleteSchoolMutationResult = NonNullable<Awaited<ReturnType<typeof adminDeleteSchool>>>
+
+    export type AdminDeleteSchoolMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a suspended school
+ */
+export const useAdminDeleteSchool = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteSchool>>, TError,{schoolId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminDeleteSchool>>,
+        TError,
+        {schoolId: string},
+        TContext
+      > => {
+      return useMutation(getAdminDeleteSchoolMutationOptions(options));
+    }
+
 export const getAdminActivateSchoolUrl = (schoolId: string,) => {
 
 
@@ -1761,6 +1832,76 @@ export function useGetTeacher<TData = Awaited<ReturnType<typeof getTeacher>>, TE
 
 
 
+
+export const getDeleteTeacherUrl = (teacherId: string,) => {
+
+
+
+
+  return `/api/teachers/${teacherId}`
+}
+
+/**
+ * @summary Delete a teacher and connected records
+ */
+export const deleteTeacher = async (teacherId: string, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getDeleteTeacherUrl(teacherId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteTeacherMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeacher>>, TError,{teacherId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTeacher>>, TError,{teacherId: string}, TContext> => {
+
+const mutationKey = ['deleteTeacher'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTeacher>>, {teacherId: string}> = (props) => {
+          const {teacherId} = props ?? {};
+
+          return  deleteTeacher(teacherId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTeacherMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTeacher>>>
+
+    export type DeleteTeacherMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a teacher and connected records
+ */
+export const useDeleteTeacher = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeacher>>, TError,{teacherId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTeacher>>,
+        TError,
+        {teacherId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteTeacherMutationOptions(options));
+    }
 
 export const getGetTeacherProfileUrl = () => {
 

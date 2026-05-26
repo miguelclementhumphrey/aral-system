@@ -4,6 +4,7 @@ import {
   useAdminGetSchool, 
   useAdminActivateSchool,
   useAdminSuspendSchool,
+  useAdminDeleteSchool,
   useAdminResetSchoolPassword,
   getAdminGetSchoolQueryKey,
   getAdminGetSchoolsQueryKey
@@ -25,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ShieldCheck, ShieldAlert, KeyRound, CheckCircle2, AlertTriangle, Users, BookOpen } from "lucide-react";
+import { ChevronLeft, ShieldCheck, ShieldAlert, KeyRound, CheckCircle2, AlertTriangle, Users, BookOpen, Trash2 } from "lucide-react";
 
 export default function AdminSchoolDetail() {
   const params = useParams();
@@ -37,10 +38,12 @@ export default function AdminSchoolDetail() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: school, isLoading } = useAdminGetSchool(schoolId);
   const activateSchool = useAdminActivateSchool();
   const suspendSchool = useAdminSuspendSchool();
+  const deleteSchool = useAdminDeleteSchool();
   const resetPassword = useAdminResetSchoolPassword();
 
   if (isLoading) {
@@ -85,11 +88,23 @@ export default function AdminSchoolDetail() {
       await resetPassword.mutateAsync({ schoolId });
       toast({ 
         title: "Password reset", 
-        description: "The school head's password has been reset to the default school code.",
+        description: "The school head's password has been reset to the default School ID.",
       });
       setResetDialogOpen(false);
     } catch (e: any) {
       toast({ title: "Action failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteSchool.mutateAsync({ schoolId });
+      queryClient.invalidateQueries({ queryKey: getAdminGetSchoolsQueryKey() });
+      toast({ title: "School deleted", description: "The suspended school and related records were deleted." });
+      setDeleteDialogOpen(false);
+      setLocation("/admin/schools");
+    } catch (e: any) {
+      toast({ title: "Delete failed", description: e.message, variant: "destructive" });
     }
   };
 
@@ -109,7 +124,7 @@ export default function AdminSchoolDetail() {
             {school.status === "pending" && <Badge variant="outline" className="text-amber-500 border-amber-500">Pending</Badge>}
             {school.status === "suspended" && <Badge variant="destructive">Suspended</Badge>}
           </div>
-          <p className="text-muted-foreground mt-1">School Code: <span className="font-mono text-foreground">{school.schoolCode}</span></p>
+          <p className="text-muted-foreground mt-1">School ID: <span className="font-mono text-foreground">{school.schoolCode}</span></p>
         </div>
 
         <div className="flex gap-2">
@@ -124,6 +139,11 @@ export default function AdminSchoolDetail() {
           ) : (
             <Button variant="destructive" onClick={() => setSuspendDialogOpen(true)}>
               <ShieldAlert className="w-4 h-4 mr-2" /> Suspend
+            </Button>
+          )}
+          {school.status === "suspended" && (
+            <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+              <Trash2 className="w-4 h-4 mr-2" /> Delete
             </Button>
           )}
         </div>
@@ -223,7 +243,7 @@ export default function AdminSchoolDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Password?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will reset the school head's password back to their school code ({school.schoolCode}). 
+              This will reset the school head's password back to their School ID ({school.schoolCode}). 
               They will be forced to change it upon their next login.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -261,6 +281,23 @@ export default function AdminSchoolDetail() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleSuspend} className="bg-destructive hover:bg-destructive/90">Suspend Access</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Suspended School?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the school, school head profile, teachers, learners, grade levels, attendance, reading levels, and ARAL profile records connected to this school. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete School
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

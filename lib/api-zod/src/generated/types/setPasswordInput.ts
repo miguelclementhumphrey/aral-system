@@ -8,6 +8,7 @@
 
 export interface SetPasswordInput {
   schoolId: string;
-  tempCredential: string;
+  /** Optional fallback for first-login setup; bearer token is preferred. */
+  tempCredential?: string;
   newPassword: string;
 }

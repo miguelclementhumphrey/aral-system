@@ -10,17 +10,40 @@ export interface TeacherProfile {
   id: string;
   teacherId: string;
   /** @nullable */
+  name?: string | null;
+  /** @nullable */
   age?: number | null;
   /** @nullable */
   sex?: string | null;
   /** @nullable */
   dateOfBirth?: string | null;
+  designation: string;
+  /** @nullable */
+  designationOther?: string | null;
+  position: string;
+  email: string;
+  /** @nullable */
+  district?: string | null;
+  /** @nullable */
+  division?: string | null;
+  /** @nullable */
+  schoolYear?: string | null;
   yearsInService: string;
   highestEducationalAttainment: string;
   fieldOfSpecialization: string;
+  /** @nullable */
+  fieldOfSpecializationOther?: string | null;
   currentGradeLevel: string;
   contactNumber: string;
   mostSubjectHandled: string;
   trainingsAttended: string[];
+  /** @nullable */
+  literacyTrainingAttended?: string | null;
+  readingTrainingsAttended: string[];
+  /** @nullable */
+  englishTrainingAttended?: string | null;
+  englishTrainingsAttended: string[];
+  /** @nullable */
+  highestTrainingLevel?: string | null;
   isComplete: boolean;
 }

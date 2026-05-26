@@ -231,6 +231,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/School"
+    delete:
+      operationId: adminDeleteSchool
+      tags: [admin]
+      summary: Delete a suspended school
+      description: Permanently deletes a school and related records. The school must be suspended first.
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: School deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
 
   /admin/schools/{schoolId}/activate:
     post:
@@ -436,6 +454,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Teacher"
+    delete:
+      operationId: deleteTeacher
+      tags: [teachers]
+      summary: Delete a teacher and connected records
+      parameters:
+        - name: teacherId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Teacher deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
 
   /teachers/profile:
     get:
@@ -824,11 +859,11 @@ components:
           type: string
         tempCredential:
           type: string
+          description: Optional fallback for first-login setup; bearer token is preferred.
         newPassword:
           type: string
       required:
         - schoolId
-        - tempCredential
         - newPassword
 
     SchoolOption:
@@ -939,14 +974,18 @@ components:
           type: string
         schoolId:
           type: string
+        name:
+          type: ["string", "null"]
         firstName:
-          type: string
+          type: ["string", "null"]
         middleName:
           type: ["string", "null"]
         lastName:
-          type: string
+          type: ["string", "null"]
         designation:
           type: string
+        designationOther:
+          type: ["string", "null"]
         position:
           type: string
         contactNumber:
@@ -954,44 +993,59 @@ components:
         email:
           type: string
         district:
-          type: string
+          type: ["string", "null"]
         division:
-          type: string
+          type: ["string", "null"]
         schoolYear:
-          type: string
+          type: ["string", "null"]
         highestEducationalAttainment:
           type: string
         yearsInService:
           type: string
         fieldOfSpecialization:
           type: string
+        fieldOfSpecializationOther:
+          type: ["string", "null"]
         trainingsAttended:
           type: array
           items:
             type: string
+        literacyTrainingAttended:
+          type: ["string", "null"]
+        readingTrainingsAttended:
+          type: array
+          items:
+            type: string
+        englishTrainingAttended:
+          type: ["string", "null"]
+        englishTrainingsAttended:
+          type: array
+          items:
+            type: string
+        highestTrainingLevel:
+          type: ["string", "null"]
         isComplete:
           type: boolean
       required:
         - id
         - schoolId
-        - firstName
-        - lastName
         - designation
         - position
         - contactNumber
         - email
-        - district
-        - division
-        - schoolYear
         - highestEducationalAttainment
         - yearsInService
         - fieldOfSpecialization
         - trainingsAttended
+        - readingTrainingsAttended
+        - englishTrainingsAttended
         - isComplete
 
     SchoolHeadProfileInput:
       type: object
       properties:
+        name:
+          type: string
         firstName:
           type: string
         middleName:
@@ -999,6 +1053,8 @@ components:
         lastName:
           type: string
         designation:
+          type: string
+        designationOther:
           type: string
         position:
           type: string
@@ -1018,23 +1074,37 @@ components:
           type: string
         fieldOfSpecialization:
           type: string
+        fieldOfSpecializationOther:
+          type: string
         trainingsAttended:
           type: array
           items:
             type: string
+        literacyTrainingAttended:
+          type: string
+        readingTrainingsAttended:
+          type: array
+          items:
+            type: string
+        englishTrainingAttended:
+          type: string
+        englishTrainingsAttended:
+          type: array
+          items:
+            type: string
+        highestTrainingLevel:
+          type: string
       required:
-        - firstName
-        - lastName
         - designation
         - position
         - contactNumber
         - email
-        - district
-        - division
-        - schoolYear
         - highestEducationalAttainment
         - yearsInService
         - fieldOfSpecialization
+        - literacyTrainingAttended
+        - englishTrainingAttended
+        - highestTrainingLevel
 
     GradeLevel:
       type: object
@@ -1120,10 +1190,14 @@ components:
           type: string
         gradeLevelId:
           type: string
+        pin:
+          type: string
+          pattern: ^[0-9]{4,12}$
       required:
         - firstName
         - lastName
         - gradeLevelId
+        - pin
 
     TeacherProfile:
       type: object
@@ -1132,11 +1206,27 @@ components:
           type: string
         teacherId:
           type: string
+        name:
+          type: ["string", "null"]
         age:
           type: ["integer", "null"]
         sex:
           type: ["string", "null"]
         dateOfBirth:
+          type: ["string", "null"]
+        designation:
+          type: string
+        designationOther:
+          type: ["string", "null"]
+        position:
+          type: string
+        email:
+          type: string
+        district:
+          type: ["string", "null"]
+        division:
+          type: ["string", "null"]
+        schoolYear:
           type: ["string", "null"]
         yearsInService:
           type: string
@@ -1144,6 +1234,8 @@ components:
           type: string
         fieldOfSpecialization:
           type: string
+        fieldOfSpecializationOther:
+          type: ["string", "null"]
         currentGradeLevel:
           type: string
         contactNumber:
@@ -1154,11 +1246,28 @@ components:
           type: array
           items:
             type: string
+        literacyTrainingAttended:
+          type: ["string", "null"]
+        readingTrainingsAttended:
+          type: array
+          items:
+            type: string
+        englishTrainingAttended:
+          type: ["string", "null"]
+        englishTrainingsAttended:
+          type: array
+          items:
+            type: string
+        highestTrainingLevel:
+          type: ["string", "null"]
         isComplete:
           type: boolean
       required:
         - id
         - teacherId
+        - designation
+        - position
+        - email
         - yearsInService
         - highestEducationalAttainment
         - fieldOfSpecialization
@@ -1166,22 +1275,42 @@ components:
         - contactNumber
         - mostSubjectHandled
         - trainingsAttended
+        - readingTrainingsAttended
+        - englishTrainingsAttended
         - isComplete
 
     TeacherProfileInput:
       type: object
       properties:
+        name:
+          type: string
         age:
           type: integer
         sex:
           type: string
         dateOfBirth:
           type: string
+        designation:
+          type: string
+        designationOther:
+          type: string
+        position:
+          type: string
+        email:
+          type: string
+        district:
+          type: string
+        division:
+          type: string
+        schoolYear:
+          type: string
         yearsInService:
           type: string
         highestEducationalAttainment:
           type: string
         fieldOfSpecialization:
+          type: string
+        fieldOfSpecializationOther:
           type: string
         currentGradeLevel:
           type: string
@@ -1193,13 +1322,33 @@ components:
           type: array
           items:
             type: string
+        literacyTrainingAttended:
+          type: string
+        readingTrainingsAttended:
+          type: array
+          items:
+            type: string
+        englishTrainingAttended:
+          type: string
+        englishTrainingsAttended:
+          type: array
+          items:
+            type: string
+        highestTrainingLevel:
+          type: string
       required:
+        - designation
+        - position
+        - email
         - yearsInService
         - highestEducationalAttainment
         - fieldOfSpecialization
         - currentGradeLevel
         - contactNumber
         - mostSubjectHandled
+        - literacyTrainingAttended
+        - englishTrainingAttended
+        - highestTrainingLevel
 
     Learner:
       type: object

@@ -7,14 +7,28 @@
  */
 
 export interface TeacherProfileInput {
+  name?: string;
   age?: number;
   sex?: string;
   dateOfBirth?: string;
+  designation: string;
+  designationOther?: string;
+  position: string;
+  email: string;
+  district?: string;
+  division?: string;
+  schoolYear?: string;
   yearsInService: string;
   highestEducationalAttainment: string;
   fieldOfSpecialization: string;
+  fieldOfSpecializationOther?: string;
   currentGradeLevel: string;
   contactNumber: string;
   mostSubjectHandled: string;
   trainingsAttended?: string[];
+  literacyTrainingAttended: string;
+  readingTrainingsAttended?: string[];
+  englishTrainingAttended: string;
+  englishTrainingsAttended?: string[];
+  highestTrainingLevel: string;
 }

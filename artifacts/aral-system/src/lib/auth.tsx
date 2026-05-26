@@ -14,11 +14,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Setup token getter for Orval client
-setAuthTokenGetter(() => localStorage.getItem("aral_token"));
+setAuthTokenGetter(() => sessionStorage.getItem("aral_token"));
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("aral_token"));
+  const [token, setToken] = useState<string | null>(sessionStorage.getItem("aral_token"));
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    localStorage.removeItem("aral_token");
+  }, []);
 
   const { data: authResponse, isLoading, isError } = useGetMe({
     query: {
@@ -32,12 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProfileComplete = authResponse?.profileComplete ?? true;
 
   const login = (data: AuthResponse) => {
-    localStorage.setItem("aral_token", data.token);
+    sessionStorage.setItem("aral_token", data.token);
+    localStorage.removeItem("aral_token");
     setToken(data.token);
     queryClient.setQueryData(getGetMeQueryKey(), data);
   };
 
   const logout = () => {
+    sessionStorage.removeItem("aral_token");
     localStorage.removeItem("aral_token");
     setToken(null);
     queryClient.clear();

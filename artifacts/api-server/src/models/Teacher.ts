@@ -28,8 +28,9 @@ const TeacherSchema = new Schema<ITeacher>({
 }, { timestamps: true });
 
 TeacherSchema.methods.comparePin = async function (pin: string): Promise<boolean> {
+  const candidate = String(pin).trim();
   if (!this.pinHash) return false;
-  return bcrypt.compare(pin, this.pinHash);
+  return bcrypt.compare(candidate, this.pinHash);
 };
 
 export const Teacher = mongoose.model<ITeacher>("Teacher", TeacherSchema);

@@ -11,9 +11,14 @@ export interface JwtPayload {
 }
 
 export function signToken(payload: JwtPayload): string {
-  return jwt.sign(payload, requireStrongSecret("JWT_SECRET"), { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, requireStrongSecret("JWT_SECRET"), {
+    algorithm: "HS256",
+    expiresIn: JWT_EXPIRES_IN,
+  });
 }
 
 export function verifyToken(token: string): JwtPayload {
-  return jwt.verify(token, requireStrongSecret("JWT_SECRET")) as JwtPayload;
+  return jwt.verify(token, requireStrongSecret("JWT_SECRET"), {
+    algorithms: ["HS256"],
+  }) as JwtPayload;
 }

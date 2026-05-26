@@ -24,9 +24,7 @@ import { Input } from "@/components/ui/input";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -55,6 +53,7 @@ type CreateLearnerFormValues = z.infer<typeof createLearnerSchema>;
 export default function TeacherLearners() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDevelopmentOpen, setIsDevelopmentOpen] = useState(false);
   const [flagLearnerId, setFlagLearnerId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -110,7 +109,9 @@ export default function TeacherLearners() {
             Manage learners in your class. Grade Level: <strong>{(user as any)?.gradeLevelId ? "Loaded" : "—"}</strong>
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button
+          onClick={() => setIsDevelopmentOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" /> Add Learner
         </Button>
       </div>
@@ -220,13 +221,18 @@ export default function TeacherLearners() {
                 <FormField control={form.control} name="gender" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Gender</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Select gender"
+                        searchPlaceholder="Search gender..."
+                        options={[
+                          { value: "male", label: "Male" },
+                          { value: "female", label: "Female" },
+                        ]}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -265,6 +271,25 @@ export default function TeacherLearners() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Flag as ARAL
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDevelopmentOpen} onOpenChange={setIsDevelopmentOpen}>
+        <AlertDialogContent className="max-w-xl border-destructive bg-destructive text-destructive-foreground shadow-2xl">
+          <AlertDialogHeader className="items-center text-center">
+            <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-destructive-foreground/15">
+              <AlertTriangle className="h-9 w-9" />
+            </div>
+            <AlertDialogTitle className="text-3xl font-bold">Under Development</AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-destructive-foreground/90">
+              Adding learners is temporarily unavailable.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-center">
+            <AlertDialogAction className="bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90">
+              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

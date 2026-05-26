@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -98,8 +99,7 @@ export default function AdminLogin() {
                     <FormItem>
                       <FormLabel className="text-sidebar-foreground">Password</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password" 
+                        <PasswordInput 
                           placeholder="Enter admin password" 
                           {...field} 
                           className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50"
