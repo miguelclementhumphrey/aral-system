@@ -1,3 +1,4 @@
+import "./lib/env";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { connectMongoDB } from "./lib/mongodb";
@@ -8,6 +9,7 @@ const port = Number(process.env.PORT ?? 8080);
 async function start() {
   await connectMongoDB();
   await seedAdmin();
+
   app.listen(port, () => {
     logger.info({ port }, "Server listening");
   });

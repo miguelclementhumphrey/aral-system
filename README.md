@@ -1,18 +1,14 @@
 # ARAL System
 
-ARAL System is a fullstack MERN (MongoDB, Express, React, TypeScript) educational platform designed for Philippine DepEd (Department of Education) schools to track learner profiles, manage teacher assignments, and monitor reading intervention programs (ARAL).
+ARAL System is a fullstack MERN (MongoDB, Express, React, TypeScript) educational platform designed for Philippine DepEd schools to track learner profiles, manage teacher assignments, and monitor reading intervention programs.
 
-**Features:**
+## Features
 
-- **4 User Roles:** Super Admin, School Head, Teacher, Learner
-- **School Management:** Register, activate, and suspend schools with unique school codes
-- **Teacher Management:** Assign teachers to grade levels, generate login PINs
-- **Learner Tracking:** Register learners, flag for ARAL intervention, track reading levels
-- **ARAL Dashboard:** Document intervention details, absenteeism patterns, and assessments
-- **Attendance System:** Weekly click-to-toggle attendance tracking
-- **Role-Based Access:** Strict gated workflows with first-time login password setup
-
----
+- **Super Admin:** manage schools, activate/suspend accounts, and view system summaries
+- **School Head:** manage school profile, grade levels, teachers, and learners
+- **Teacher:** manage learners, ARAL intervention records, attendance, and reading levels
+- **Role-Based Access:** JWT-secured workflows for super admins, school heads, and teachers
+- **ARAL Tracking:** learner profiles, intervention flags, reading levels, and attendance records
 
 ## Tech Stack
 
@@ -20,306 +16,249 @@ ARAL System is a fullstack MERN (MongoDB, Express, React, TypeScript) educationa
 |-------|------------|
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4, Radix UI, Recharts, Wouter |
 | Backend | Express 5, TypeScript, Mongoose, esbuild |
-| Database | MongoDB 7.0+ |
+| Database | MongoDB Atlas or MongoDB 7.0+ |
 | Validation | Zod |
-| Auth | JWT Bearer tokens (localStorage) |
+| Auth | JWT bearer tokens |
 | Package Manager | pnpm workspaces |
-
----
 
 ## Project Structure
 
+```text
+artifacts/
+  api-server/          Express API server, default port 8080
+    src/
+      routes/          API route handlers
+      models/          Mongoose schemas
+      middlewares/     auth middleware
+      lib/             env, jwt, mongodb, logger helpers
+      seed.ts          optional initial super admin seed
+      index.ts         server entry point
+  aral-system/         React frontend, default port 3000
+    src/
+      pages/
+      components/
+      lib/
+      App.tsx
+lib/
+  api-spec/            OpenAPI spec and codegen config
+  api-zod/             generated Zod schemas
+  api-client-react/    generated React Query API hooks
 ```
-├── artifacts/
-│   ├── api-server/          # Express API server (port 8080)
-│   │   ├── src/
-│   │   │   ├── routes/      # All API route handlers
-│   │   │   ├── models/      # Mongoose schemas
-│   │   │   ├── middlewares/ # auth.ts (authenticate, requireRole)
-│   │   │   ├── lib/         # jwt.ts, mongodb.ts, logger.ts
-│   │   │   ├── seed.ts      # Seeds default super admin
-│   │   │   └── index.ts     # Entry point
-│   │   └── dist/            # Production build output
-│   └── aral-system/         # React frontend (port 3000)
-│       ├── src/
-│       │   ├── pages/       # All page components
-│       │   ├── components/  # UI components + layout
-│       │   ├── lib/         # auth.tsx (AuthProvider + useAuth)
-│       │   └── App.tsx      # Routing
-│       └── dist/            # Production build output
-├── lib/
-│   ├── api-spec/            # OpenAPI YAML spec + Orval codegen config
-│   ├── api-zod/             # Zod schemas (generated from OpenAPI)
-│   └── api-client-react/    # React Query hooks (generated from OpenAPI)
-├── package.json            # Root workspace config
-├── pnpm-workspace.yaml     # pnpm workspace definition
-├── tsconfig.json           # Root TypeScript project references
-├── tsconfig.base.json      # Shared TS compiler options
-└── .env.example            # Example environment variables
-```
-
----
 
 ## Prerequisites
 
-1. **Node.js** 20+ (LTS recommended)
-2. **pnpm** 10+ — [Install pnpm](https://pnpm.io/installation)
-3. **MongoDB** 7.0+ — can be local or remote (MongoDB Atlas)
+1. Node.js 20+
+2. pnpm 10+
+3. MongoDB Atlas connection string, or a running local MongoDB instance
 
----
+## Install
 
-## Installation & Setup
+From the repository root:
 
-### 1. Clone / Download the Project
-
-If you downloaded from Replit, extract the ZIP file and open the folder in VS Code.
-
-```bash
-cd aral-system
-```
-
-### 2. Install Dependencies
-
-```bash
+```powershell
 pnpm install
 ```
 
-This installs all workspace packages using pnpm's workspace linkage.
+## Environment Setup
 
-### 3. Set Up Environment Variables
+The backend loads environment variables from:
 
-Copy the example file and fill in real values:
-
-```bash
-cp .env.example .env
+```text
+artifacts/api-server/.env
 ```
 
-Edit `.env` in the root (or per artifact) with your own values:
+Create it from the example:
 
-```bash
-# Backend
+```powershell
+Copy-Item artifacts/api-server/.env.example artifacts/api-server/.env
+```
+
+Fill it in:
+
+```env
 PORT=8080
-MONGODB_URI=mongodb://localhost:27017/aral_system
-JWT_SECRET=your_super_random_secret_key_here
-
-# Frontend
-FRONTEND_PORT=3000
-BASE_PATH=/
+MONGODB_URI=mongodb+srv://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_CLUSTER.mongodb.net/aral_system?retryWrites=true&w=majority
+JWT_SECRET=replace_with_at_least_32_random_characters
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=replace_with_a_strong_initial_password_min_10_chars
+ADMIN_UPDATE_PASSWORD_ON_START=false
+SEED_DEMO_DATA=false
+CORS_ORIGIN=http://localhost:3000
+LOG_LEVEL=info
 ```
 
-**Important:**
+Security notes:
 
-- `MONGODB_URI` — use your MongoDB connection string (local or Atlas)
-- `JWT_SECRET` — generate a strong random string (e.g., `openssl rand -base64 48`)
-- `BASE_PATH` — set to `/` for most deployments, or a subpath if serving under a directory
+- `MONGODB_URI` is required. The API will not start without it.
+- `JWT_SECRET` is required and must be at least 32 characters.
+- `ADMIN_USERNAME` and `ADMIN_PASSWORD` are used to seed the first super admin if one does not already exist.
+- `ADMIN_PASSWORD` must be at least 10 characters.
+- Set `ADMIN_UPDATE_PASSWORD_ON_START=true` only when you intentionally want startup to reset the seeded admin password.
+- Set `SEED_DEMO_DATA=true` only for local development when you want a usable demo school, teacher, and learners.
+- There are no default admin credentials anymore.
+- Do not commit `.env` files.
 
-### 4. Start MongoDB (if running locally)
+## MongoDB Atlas Setup
 
-**Option A: MongoDB installed locally**
-```bash
-mongod --dbpath /data/db --port 27017
+Use Atlas if you do not want to install MongoDB locally.
+
+1. Create a free MongoDB Atlas account.
+2. Create a free cluster.
+3. Create a **Database User** for this app.
+4. Save the database username and password.
+5. Go to **Network Access** and add your current IP address.
+6. Open the cluster and click **Connect**.
+7. Choose **Drivers** and select Node.js.
+8. Copy the `mongodb+srv://...` connection string.
+9. Replace the username/password placeholders.
+10. Use database name `aral_system` in the URI.
+11. Paste the final URI into `artifacts/api-server/.env` as `MONGODB_URI`.
+
+Example shape:
+
+```env
+MONGODB_URI=mongodb+srv://aral_app_user:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/aral_system?retryWrites=true&w=majority
 ```
 
-**Option B: Docker**
-```bash
-docker run -d --name mongodb -p 27017:27017 mongo:7
-```
-
-**Option C: MongoDB Atlas** 
-Just use your Atlas connection string in `MONGODB_URI`.
-
----
+If your password contains special characters like `@`, `:`, `/`, `#`, `%`, or spaces, URL-encode it before putting it in the URI.
 
 ## Running Locally
 
-### Start the API Server
+Start the API server:
 
-```bash
-# Terminal 1
-PORT=8080 MONGODB_URI=mongodb://localhost:27017/aral_system JWT_SECRET=your_secret pnpm --filter @workspace/api-server run dev
-```
-
-Or with a `.env` file loaded via `dotenv-cli` or similar:
-```bash
-cd artifacts/api-server && pnpm run dev
+```powershell
+cd artifacts/api-server
+pnpm run dev
 ```
 
 The API server will:
-- Build the bundle with esbuild
-- Connect to MongoDB
-- Seed a default super admin (username: `admin`, password: `Admin@1234`)
-- Listen on the configured port (default: 8080)
 
-### Start the Frontend
+- load `artifacts/api-server/.env`
+- connect to MongoDB
+- seed the first super admin if `ADMIN_USERNAME` and `ADMIN_PASSWORD` are set
+- listen on port `8080` by default
 
-```bash
-# Terminal 2
-PORT=3000 BASE_PATH=/ pnpm --filter @workspace/aral-system run dev
+Start the frontend in a second terminal:
+
+```powershell
+cd artifacts/aral-system
+pnpm run dev
 ```
 
-Open your browser to `http://localhost:3000`.
+Open:
 
-### Default Login Credentials
+```text
+http://localhost:3000
+```
 
-| Role | Username / Method | Password |
-|------|-------------------|----------|
-| Super Admin | `admin` | `Admin@1234` |
-| School Head | Select school + school code (first login) | school code |
-| Teacher | Select teacher name + PIN | teacher PIN |
+The frontend proxies `/api` requests to:
 
----
+```text
+http://localhost:8080
+```
 
-## Building for Production
+## Login
 
-### Build the API Server
+The initial super admin credentials are whatever you put in:
 
-```bash
+```env
+ADMIN_USERNAME=...
+ADMIN_PASSWORD=...
+```
+
+After logging in as Super Admin, create and activate schools from the admin UI. School Head and Teacher logins depend on the schools, grade levels, and teachers created in the app.
+
+If `SEED_DEMO_DATA=true`, the backend also creates:
+
+| Role | Login |
+|------|-------|
+| School Head | Select `ARAL Demo Elementary School`, password `school@1234` |
+| Teacher | Select `ARAL Demo Elementary School`, PIN `123456` |
+
+## Build
+
+Build the API:
+
+```powershell
 pnpm --filter @workspace/api-server run build
 ```
 
-Output: `artifacts/api-server/dist/index.mjs` (bundled with all dependencies)
+Build the frontend:
 
-Run production server:
-```bash
-PORT=8080 MONGODB_URI=your_mongo_uri JWT_SECRET=your_secret node artifacts/api-server/dist/index.mjs
+```powershell
+pnpm --filter @workspace/aral-system run build
 ```
 
-### Build the Frontend
+Build everything:
 
-```bash
-PORT=3000 BASE_PATH=/ pnpm --filter @workspace/aral-system run build
+```powershell
+pnpm run build
 ```
 
-Output: `artifacts/aral-system/dist/` — static HTML, CSS, and JS files
+## Production
 
-Preview the production build locally:
-```bash
-PORT=3000 BASE_PATH=/ pnpm --filter @workspace/aral-system run preview
-```
-
----
-
-## Deploying to a Hosting Provider
-
-### Frontend (Static Hosting)
-
-**Vercel:**
-1. Import your Git repository
-2. Framework Preset: `Vite`
-3. Build Command: `pnpm --filter @workspace/aral-system run build`
-4. Output Directory: `artifacts/aral-system/dist`
-5. Set environment variables: `BASE_PATH=/`
-
-**Netlify:**
-1. Import your Git repository
-2. Build Command: `pnpm --filter @workspace/aral-system run build`
-3. Publish Directory: `artifacts/aral-system/dist`
-4. Set environment variables: `BASE_PATH=/`
-
-**Cloudflare Pages / GitHub Pages:**
-Deploy the contents of `artifacts/aral-system/dist` as static files.
-
-### Backend (Node.js Hosting)
-
-**Railway / Render / Fly.io:**
-1. Deploy the entire repository
-2. Set the **start command** to:
-   ```bash
-   node artifacts/api-server/dist/index.mjs
-   ```
-3. Required environment variables:
-   - `PORT` — provider-assigned port
-   - `MONGODB_URI` — your MongoDB connection
-   - `JWT_SECRET` — strong random secret
-   - `NODE_ENV=production`
-
-**Self-hosted (PM2):**
-```bash
-pnpm --filter @workspace/api-server run build
-pm2 start artifacts/api-server/dist/index.mjs --name "aral-api"
-```
-
-### Full-Stack on a Single Server
-
-For a single-machine deployment (e.g., VPS):
-
-1. Build both frontend and backend:
-   ```bash
-   pnpm run build
-   ```
-
-2. Serve the frontend as static files (nginx, Apache, or a CDN)
-
-3. Proxy `/api/*` requests to the backend:
-   ```nginx
-   server {
-       listen 80;
-       root /var/www/aral-system/artifacts/aral-system/dist;
-       index index.html;
-
-       location /api {
-           proxy_pass http://localhost:8080;
-           proxy_http_version 1.1;
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-       }
-
-       location / {
-           try_files $uri $uri/ /index.html;
-       }
-   }
-   ```
-
----
-
-## API Codegen (Advanced)
-
-The frontend React Query hooks and backend Zod schemas are auto-generated from `lib/api-spec/openapi.yaml` using Orval.
-
-To regenerate after modifying the OpenAPI spec:
+API start command:
 
 ```bash
-pnpm --filter @workspace/api-spec run codegen
+node artifacts/api-server/dist/index.mjs
 ```
 
----
+Required backend environment variables:
 
-## Environment Variables Reference
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | Yes | API server port. Hosting providers often inject this. |
+| `MONGODB_URI` | Yes | MongoDB Atlas or MongoDB connection string. |
+| `JWT_SECRET` | Yes | At least 32 characters. Used to sign JWTs. |
+| `ADMIN_USERNAME` | No | Seeds initial admin when no admin exists. |
+| `ADMIN_PASSWORD` | No | Seeds initial admin. Must be at least 10 characters if set. |
+| `ADMIN_UPDATE_PASSWORD_ON_START` | No | Set to `true` to overwrite the existing seeded admin password on startup. |
+| `SEED_DEMO_DATA` | No | Set to `true` to create a demo school, grade level, teacher, and learners. |
+| `CORS_ORIGIN` | Yes | Allowed frontend origin, for example `https://your-site.com`. |
+| `LOG_LEVEL` | No | `trace`, `debug`, `info`, `warn`, `error`, or `fatal`. |
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | Yes | — | Server port (backend or Vite dev server) |
-| `MONGODB_URI` | Yes | `mongodb://localhost:27017/aral_system` | MongoDB connection string |
-| `JWT_SECRET` | Yes | `aral_system_secret_key_2024` | Secret key for signing JWTs |
-| `BASE_PATH` | Yes | `/` | Frontend base URL path |
-| `NODE_ENV` | No | `development` | `production` for prod mode |
-| `LOG_LEVEL` | No | `info` | Server log level (trace/debug/info/warn/error/fatal) |
+Frontend build output:
 
----
+```text
+artifacts/aral-system/dist
+```
 
-## Common Errors & Fixes
+For same-domain deployment, proxy `/api/*` to the API server. For separate frontend/backend domains, set backend `CORS_ORIGIN` to the exact frontend URL.
+
+## Common Errors
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `PORT is required` | Environment variable missing | Set `PORT=8080` in `.env` |
-| `MongooseServerSelectionError` | MongoDB not running | Start MongoDB locally or check connection string |
-| `401 Unauthorized` | Missing or expired JWT | Log in again; the token expires after 7 days |
-| `403 Forbidden` | User accessing wrong role route | Check sidebar navigation matches your role |
-| `pnpm install fails` | Wrong package manager | Use `pnpm` — not npm or yarn |
-| `CORS error` | Frontend and backend on different origins | Ensure backend has `cors()` enabled (default) |
-| `Cannot find module '@workspace/...'` | Workspace not linked | Run `pnpm install` from the root |
+| `MONGODB_URI is required` | Backend `.env` missing or incomplete | Create `artifacts/api-server/.env` and set `MONGODB_URI`. |
+| `JWT_SECRET is required` | Missing JWT secret | Set a long random `JWT_SECRET`. |
+| `JWT_SECRET must be at least 32 characters long` | Secret is too short | Use a longer random value. |
+| `MongooseServerSelectionError` | MongoDB cannot be reached | Check Atlas IP allowlist, username/password, and URI. |
+| `CORS error` | Frontend origin not allowed | Set `CORS_ORIGIN=http://localhost:3000` for local dev. |
+| Blank frontend after loading | API is not running or `/api` cannot connect | Start `artifacts/api-server` first, then restart Vite. |
+| `Cannot find module '@workspace/...'` | Workspace packages are not linked | Run `pnpm install` from the repository root. |
 
----
+## API Codegen
+
+The React Query hooks and Zod schemas are generated from:
+
+```text
+lib/api-spec/openapi.yaml
+```
+
+Regenerate after changing the API spec:
+
+```powershell
+pnpm --filter @workspace/api-spec run codegen
+```
 
 ## Development Notes
 
-- The project uses **pnpm workspaces**. Always run `pnpm install` from the root directory.
-- The API server bundles to a single `dist/index.mjs` file using esbuild — no need to deploy `node_modules`.
-- Frontend uses Vite's dev server with HMR during development.
-- The `lib/api-client-react` package reads `fetch` URLs relative to `/api` — set your frontend proxy accordingly.
-- The app is fully client-side rendered (CSR). For SSR or SSG, additional configuration is needed.
-
----
+- Use pnpm from the repository root for installs.
+- Use `artifacts/api-server/.env` for backend secrets.
+- Do not use fake production secrets.
+- The API bundle is written to `artifacts/api-server/dist`.
+- The frontend bundle is written to `artifacts/aral-system/dist`.
+- The frontend API client calls relative `/api` URLs, so Vite or production hosting must proxy `/api` to the backend.
 
 ## License
 

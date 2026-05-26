@@ -28,8 +28,9 @@ export default function Login() {
   
   const [selectedRole, setSelectedRole] = useState<"school_head" | "teacher">("school_head");
   
-  const { data: schools, isLoading: schoolsLoading } = useGetSchoolsForLogin();
+  const { data: schools, isError: schoolsError, isLoading: schoolsLoading } = useGetSchoolsForLogin();
   const loginMutation = useLogin();
+  const schoolOptions = Array.isArray(schools) ? schools : [];
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -132,11 +133,19 @@ export default function Login() {
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={schoolsLoading ? "Loading schools..." : "Select your school"} />
+                            <SelectValue
+                              placeholder={
+                                schoolsLoading
+                                  ? "Loading schools..."
+                                  : schoolsError
+                                    ? "Unable to load schools"
+                                    : "Select your school"
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {schools?.map(school => (
+                          {schoolOptions.map(school => (
                             <SelectItem 
                               key={school.id} 
                               value={school.id}

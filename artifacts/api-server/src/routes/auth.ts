@@ -143,21 +143,29 @@ router.post("/login", async (req: Request, res: Response) => {
     }
 
     if (role === "teacher") {
-      if (!teacherId) {
-        res.status(400).json({ error: "Teacher ID required" });
-        return;
-      }
-      const teacher = await Teacher.findOne({ _id: teacherId, schoolId });
+      let teacher = teacherId
+        ? await Teacher.findOne({ _id: teacherId, schoolId })
+        : null;
+
       if (!teacher) {
-        res.status(401).json({ error: "Teacher not found." });
+        const activeTeachers = await Teacher.find({ schoolId, isActive: true });
+        for (const candidate of activeTeachers) {
+          if (await candidate.comparePin(credential)) {
+            teacher = candidate;
+            break;
+          }
+        }
+      }
+
+      if (!teacher) {
+        res.status(401).json({ error: "Teacher not found or PIN is incorrect." });
         return;
       }
       if (!teacher.isActive) {
         res.status(401).json({ error: "Account not yet activated by School Head." });
         return;
       }
-      const valid = await teacher.comparePin(credential);
-      if (!valid) {
+      if (teacherId && !(await teacher.comparePin(credential))) {
         res.status(401).json({ error: "Incorrect PIN." });
         return;
       }

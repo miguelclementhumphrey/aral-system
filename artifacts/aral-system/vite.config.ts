@@ -5,6 +5,7 @@ import path from "path";
 
 const basePath = process.env.BASE_PATH ?? "/";
 const port = Number(process.env.PORT ?? 3000);
+const apiTarget = process.env.API_TARGET ?? "http://localhost:8080";
 
 export default defineConfig({
   base: basePath,
@@ -26,6 +27,12 @@ export default defineConfig({
     strictPort: true,
     host: "0.0.0.0",
     allowedHosts: true,
+    proxy: {
+      "/api": {
+        target: apiTarget,
+        changeOrigin: true,
+      },
+    },
     fs: {
       strict: true,
     },
@@ -34,5 +41,11 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    proxy: {
+      "/api": {
+        target: apiTarget,
+        changeOrigin: true,
+      },
+    },
   },
 });

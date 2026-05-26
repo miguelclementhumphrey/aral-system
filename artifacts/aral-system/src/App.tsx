@@ -1,3 +1,4 @@
+import type React from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -38,12 +39,19 @@ const queryClient = new QueryClient({
   },
 });
 
+const routerBase =
+  import.meta.env.BASE_URL === "/"
+    ? undefined
+    : import.meta.env.BASE_URL.replace(/\/$/, "");
+
 function ProtectedRoute({
   component: Component,
   allowedRoles,
+  redirectTo = "/login",
 }: {
   component: React.ComponentType;
   allowedRoles?: string[];
+  redirectTo?: string;
 }) {
   const { user, isLoading } = useAuth();
 
@@ -58,7 +66,7 @@ function ProtectedRoute({
     );
   }
 
-  if (!user) return <Redirect to="/login" />;
+  if (!user) return <Redirect to={redirectTo} />;
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return (
@@ -96,15 +104,15 @@ function Router() {
       {/* Admin Routes */}
       <Route
         path="/admin/dashboard"
-        component={() => <ProtectedRoute component={AdminDashboard} allowedRoles={["super_admin"]} />}
+        component={() => <ProtectedRoute component={AdminDashboard} allowedRoles={["super_admin"]} redirectTo="/admin" />}
       />
       <Route
         path="/admin/schools"
-        component={() => <ProtectedRoute component={AdminSchools} allowedRoles={["super_admin"]} />}
+        component={() => <ProtectedRoute component={AdminSchools} allowedRoles={["super_admin"]} redirectTo="/admin" />}
       />
       <Route
         path="/admin/schools/:id"
-        component={() => <ProtectedRoute component={AdminSchoolDetail} allowedRoles={["super_admin"]} />}
+        component={() => <ProtectedRoute component={AdminSchoolDetail} allowedRoles={["super_admin"]} redirectTo="/admin" />}
       />
 
       {/* School Head Routes */}
@@ -157,7 +165,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <WouterRouter base={routerBase}>
             <Router />
           </WouterRouter>
           <Toaster />
