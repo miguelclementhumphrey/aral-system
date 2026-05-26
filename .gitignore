@@ -54,3 +54,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# Local/private notes
+LOCAL_PRIVATE.md

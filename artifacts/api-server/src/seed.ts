@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 import { Admin } from "./models/Admin";
 import { AralAdditionalProfile } from "./models/AralAdditionalProfile";
 import { Attendance } from "./models/Attendance";
@@ -45,8 +46,8 @@ export async function seedAdmin() {
 }
 
 async function seedDemoData() {
-  const schoolPassword = "school@1234";
-  const teacherPin = "123456";
+  const schoolPassword = process.env.DEMO_SCHOOL_PASSWORD?.trim() || generateSecret("school");
+  const teacherPin = process.env.DEMO_TEACHER_PIN?.trim() || generatePin();
 
   const school = await School.findOneAndUpdate(
     { schoolCode: "ARAL-DEMO" },
@@ -283,4 +284,12 @@ async function seedDemoData() {
     },
     "Demo school data seeded",
   );
+}
+
+function generatePin(): string {
+  return crypto.randomInt(100000, 1000000).toString();
+}
+
+function generateSecret(prefix: string): string {
+  return `${prefix}-${crypto.randomBytes(12).toString("base64url")}`;
 }
