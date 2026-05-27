@@ -9,12 +9,19 @@ import {
   getAdminGetSchoolQueryKey,
   getAdminGetSchoolsQueryKey
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +33,51 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ShieldCheck, ShieldAlert, KeyRound, CheckCircle2, AlertTriangle, Users, BookOpen, Trash2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { apiUrl } from "@/lib/api-url";
+import { ChevronLeft, ShieldAlert, KeyRound, CheckCircle2, AlertTriangle, Users, BookOpen, Trash2, Eye, UserCircle } from "lucide-react";
+
+type ProfileDetails = {
+  name?: string | null;
+  designation?: string | null;
+  designationOther?: string | null;
+  position?: string | null;
+  contactNumber?: string | null;
+  email?: string | null;
+  highestEducationalAttainment?: string | null;
+  yearsInService?: string | null;
+  fieldOfSpecialization?: string | null;
+  fieldOfSpecializationOther?: string | null;
+  currentGradeLevel?: string | null;
+  mostSubjectHandled?: string | null;
+  literacyTrainingAttended?: string | null;
+  readingTrainingsAttended?: string[];
+  englishTrainingAttended?: string | null;
+  englishTrainingsAttended?: string[];
+  highestTrainingLevel?: string | null;
+};
+
+type AdminSchoolProfiles = {
+  schoolHead: {
+    profileComplete: boolean;
+    profile: ProfileDetails | null;
+  };
+  teachers: Array<{
+    id: string;
+    name: string;
+    gradeLevelName: string;
+    profileComplete: boolean;
+    isActive: boolean;
+    profile: ProfileDetails | null;
+  }>;
+};
+
+type SelectedProfile = {
+  title: string;
+  description: string;
+  role: "school_head" | "teacher";
+  profile: ProfileDetails;
+};
 
 export default function AdminSchoolDetail() {
   const params = useParams();
@@ -39,8 +90,26 @@ export default function AdminSchoolDetail() {
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<SelectedProfile | null>(null);
 
   const { data: school, isLoading } = useAdminGetSchool(schoolId);
+  const { data: profileOverview, isLoading: profilesLoading } = useQuery<AdminSchoolProfiles>({
+    queryKey: ["admin-school-profiles", schoolId],
+    queryFn: async () => {
+      const response = await fetch(apiUrl(`/api/admin/schools/${schoolId}/profiles`), {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("aral_token") ?? ""}`,
+        },
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error || "Failed to load profile overview");
+      }
+      return body;
+    },
+    enabled: Boolean(schoolId),
+    retry: false,
+  });
   const activateSchool = useAdminActivateSchool();
   const suspendSchool = useAdminSuspendSchool();
   const deleteSchool = useAdminDeleteSchool();
@@ -237,6 +306,160 @@ export default function AdminSchoolDetail() {
         </Card>
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Profiles</CardTitle>
+          <CardDescription>School head and teacher profile completion for this school.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {profilesLoading ? (
+            <div className="py-6 text-center text-muted-foreground">Loading profiles...</div>
+          ) : (
+            <>
+              <div className="rounded-md border p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-md bg-primary/10 p-2">
+                      <UserCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">School Head</p>
+                      <p className="text-sm text-muted-foreground">{school.schoolHeadName || "Unassigned"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ProfileStatusBadge complete={Boolean(profileOverview?.schoolHead.profileComplete)} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!profileOverview?.schoolHead.profile}
+                      onClick={() => {
+                        if (!profileOverview?.schoolHead.profile) return;
+                        setSelectedProfile({
+                          title: school.schoolHeadName || "School Head Profile",
+                          description: "School Head",
+                          role: "school_head",
+                          profile: profileOverview.schoolHead.profile,
+                        });
+                      }}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Profile
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Teacher</TableHead>
+                      <TableHead>Grade Level</TableHead>
+                      <TableHead>Profile Status</TableHead>
+                      <TableHead className="text-right">Profile</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {profileOverview?.teachers.length ? (
+                      profileOverview.teachers.map((teacher) => (
+                        <TableRow key={teacher.id}>
+                          <TableCell className="font-medium">{teacher.name}</TableCell>
+                          <TableCell>{teacher.gradeLevelName || "Not assigned"}</TableCell>
+                          <TableCell><ProfileStatusBadge complete={teacher.profileComplete} /></TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={!teacher.profile}
+                              onClick={() => {
+                                if (!teacher.profile) return;
+                                setSelectedProfile({
+                                  title: teacher.name,
+                                  description: teacher.gradeLevelName || "Teacher",
+                                  role: "teacher",
+                                  profile: teacher.profile,
+                                });
+                              }}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                          No teachers added yet.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!selectedProfile} onOpenChange={(open) => !open && setSelectedProfile(null)}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{selectedProfile?.title ?? "Profile"}</DialogTitle>
+            <DialogDescription>{selectedProfile?.description ?? "Completed profile"}</DialogDescription>
+          </DialogHeader>
+
+          {selectedProfile && (
+            <div className="max-h-[calc(85vh-7rem)] space-y-6 overflow-y-auto pr-2">
+              <section className="space-y-3">
+                <h3 className="text-lg font-medium">Personal Information</h3>
+                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                  <ProfileItem label="Name" value={selectedProfile.profile.name || selectedProfile.title} />
+                  <ProfileItem label="Email Address" value={selectedProfile.profile.email} />
+                  <ProfileItem label="Contact Number" value={selectedProfile.profile.contactNumber} />
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-lg font-medium">Professional Details</h3>
+                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                  <ProfileItem label="Designation" value={selectedProfile.profile.designation} />
+                  {selectedProfile.profile.designationOther && <ProfileItem label="Other Designation" value={selectedProfile.profile.designationOther} />}
+                  <ProfileItem
+                    label={selectedProfile.role === "teacher" ? "Position (Teachers)" : "Position (School Head)"}
+                    value={selectedProfile.profile.position}
+                  />
+                  <ProfileItem label="Highest Educational Attainment" value={selectedProfile.profile.highestEducationalAttainment} />
+                  <ProfileItem label="Field of Specialization" value={selectedProfile.profile.fieldOfSpecialization} />
+                  {selectedProfile.profile.fieldOfSpecializationOther && <ProfileItem label="Other Specialization" value={selectedProfile.profile.fieldOfSpecializationOther} />}
+                  <ProfileItem label="Years in Service" value={selectedProfile.profile.yearsInService} />
+                  {selectedProfile.role === "teacher" && (
+                    <>
+                      <ProfileItem label="Current Grade Level / Assignment" value={selectedProfile.profile.currentGradeLevel} />
+                      <ProfileItem label="Most Subject Currently Handled" value={selectedProfile.profile.mostSubjectHandled} />
+                    </>
+                  )}
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-lg font-medium">Training and Professional Development</h3>
+                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                  <ProfileItem label="Trainings related to literacy/reading instruction" value={selectedProfile.profile.literacyTrainingAttended} />
+                  <ProfileItem label="Trainings related to English curriculum instruction" value={selectedProfile.profile.englishTrainingAttended} />
+                  <ProfileList label="Recent trainings in Reading" values={selectedProfile.profile.readingTrainingsAttended ?? []} />
+                  <ProfileList label="Recent trainings in English Curriculum" values={selectedProfile.profile.englishTrainingsAttended ?? []} />
+                  <ProfileItem label="Highest level of trainings attended (last 5 years)" value={selectedProfile.profile.highestTrainingLevel} />
+                </div>
+              </section>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Dialogs */}
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent>
@@ -301,6 +524,42 @@ export default function AdminSchoolDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function ProfileStatusBadge({ complete }: { complete: boolean }) {
+  return complete ? (
+    <Badge className="bg-green-500">Complete</Badge>
+  ) : (
+    <Badge variant="outline" className="border-amber-500 text-amber-500">Pending</Badge>
+  );
+}
+
+function ProfileItem({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="rounded-md border p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 font-medium">{value || "N/A"}</p>
+    </div>
+  );
+}
+
+function ProfileList({ label, values }: { label: string; values: string[] }) {
+  return (
+    <div className="rounded-md border p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      {values.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {values.map((value) => (
+            <Badge key={value} variant="secondary" className="font-normal">
+              {value}
+            </Badge>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-1 font-medium">N/A</p>
+      )}
     </div>
   );
 }

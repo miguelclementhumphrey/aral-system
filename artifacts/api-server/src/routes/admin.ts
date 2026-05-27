@@ -28,6 +28,54 @@ async function getSchoolStats(schoolId: string) {
   return { teachersCount: teachers, learnersCount: learners, aralLearnersCount: aralLearners };
 }
 
+function formatSchoolHeadProfile(profile: any) {
+  return {
+    id: profile._id.toString(),
+    schoolId: profile.schoolId.toString(),
+    name: profile.name ?? null,
+    designation: profile.designation,
+    designationOther: profile.designationOther ?? null,
+    position: profile.position,
+    contactNumber: profile.contactNumber,
+    email: profile.email,
+    highestEducationalAttainment: profile.highestEducationalAttainment,
+    yearsInService: profile.yearsInService,
+    fieldOfSpecialization: profile.fieldOfSpecialization,
+    fieldOfSpecializationOther: profile.fieldOfSpecializationOther ?? null,
+    literacyTrainingAttended: profile.literacyTrainingAttended ?? null,
+    readingTrainingsAttended: profile.readingTrainingsAttended ?? [],
+    englishTrainingAttended: profile.englishTrainingAttended ?? null,
+    englishTrainingsAttended: profile.englishTrainingsAttended ?? [],
+    highestTrainingLevel: profile.highestTrainingLevel ?? null,
+    isComplete: profile.isComplete,
+  };
+}
+
+function formatTeacherProfile(profile: any, assignedGradeLevelName: string) {
+  return {
+    id: profile._id.toString(),
+    teacherId: profile.teacherId.toString(),
+    name: profile.name ?? null,
+    designation: profile.designation,
+    designationOther: profile.designationOther ?? null,
+    position: profile.position,
+    email: profile.email,
+    yearsInService: profile.yearsInService,
+    highestEducationalAttainment: profile.highestEducationalAttainment,
+    fieldOfSpecialization: profile.fieldOfSpecialization,
+    fieldOfSpecializationOther: profile.fieldOfSpecializationOther ?? null,
+    currentGradeLevel: assignedGradeLevelName || profile.currentGradeLevel,
+    contactNumber: profile.contactNumber,
+    mostSubjectHandled: profile.mostSubjectHandled,
+    literacyTrainingAttended: profile.literacyTrainingAttended ?? null,
+    readingTrainingsAttended: profile.readingTrainingsAttended ?? [],
+    englishTrainingAttended: profile.englishTrainingAttended ?? null,
+    englishTrainingsAttended: profile.englishTrainingsAttended ?? [],
+    highestTrainingLevel: profile.highestTrainingLevel ?? null,
+    isComplete: profile.isComplete,
+  };
+}
+
 // GET /api/admin/schools
 router.get("/schools", async (req: AuthRequest, res: Response) => {
   try {
@@ -95,6 +143,55 @@ router.get("/schools/:schoolId", async (req: AuthRequest, res: Response) => {
       schoolHeadName: school.schoolHeadName, schoolHeadContact: school.schoolHeadContact || "",
       status: school.status, profileComplete: school.profileComplete,
       lastLoginAt: school.lastLoginAt?.toISOString() ?? null, createdAt: school.createdAt.toISOString(), ...stats,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// GET /api/admin/schools/:schoolId/profiles
+router.get("/schools/:schoolId/profiles", async (req: AuthRequest, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    if (!isObjectId(schoolId)) { res.status(400).json({ error: "Invalid school ID" }); return; }
+
+    const school = await School.findById(schoolId).lean();
+    if (!school) { res.status(404).json({ error: "School not found" }); return; }
+
+    const [schoolHeadProfile, teachers, gradeLevels] = await Promise.all([
+      SchoolHeadProfile.findOne({ schoolId }).lean(),
+      Teacher.find({ schoolId }).sort({ lastName: 1, firstName: 1 }).lean(),
+      GradeLevel.find({ schoolId }).lean(),
+    ]);
+
+    const gradeLevelNames = new Map(
+      gradeLevels.map((gradeLevel: any) => [gradeLevel._id.toString(), gradeLevel.name])
+    );
+    const teacherIds = teachers.map((teacher: any) => teacher._id);
+    const teacherProfiles = await TeacherProfile.find({ teacherId: { $in: teacherIds } }).lean();
+    const profileByTeacherId = new Map(
+      teacherProfiles.map((profile: any) => [profile.teacherId.toString(), profile])
+    );
+
+    res.json({
+      schoolHead: {
+        profileComplete: Boolean(schoolHeadProfile?.isComplete),
+        profile: schoolHeadProfile?.isComplete ? formatSchoolHeadProfile(schoolHeadProfile) : null,
+      },
+      teachers: teachers.map((teacher: any) => {
+        const profile = profileByTeacherId.get(teacher._id.toString());
+        const gradeLevelName = gradeLevelNames.get(teacher.gradeLevelId.toString()) ?? "";
+        const profileComplete = Boolean(teacher.profileComplete && profile?.isComplete);
+
+        return {
+          id: teacher._id.toString(),
+          name: `${teacher.firstName} ${teacher.middleName ? `${teacher.middleName} ` : ""}${teacher.lastName}`.trim(),
+          gradeLevelName,
+          profileComplete,
+          isActive: teacher.isActive,
+          profile: profileComplete ? formatTeacherProfile(profile, gradeLevelName) : null,
+        };
+      }),
     });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
