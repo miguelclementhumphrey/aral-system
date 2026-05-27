@@ -239,39 +239,41 @@ router.post("/profile", authenticate, requireRole("teacher"), async (req: AuthRe
     const readingTrainingsAttended = cleanStringArray(data.readingTrainingsAttended);
     const englishTrainingsAttended = cleanStringArray(data.englishTrainingsAttended);
     const trainingsAttended = uniqueStrings(data.trainingsAttended, readingTrainingsAttended, englishTrainingsAttended);
-    const profile = await TeacherProfile.findOneAndUpdate(
-      { teacherId },
-      {
-        name: cleanString(data.name),
-        age: typeof data.age === "number" ? data.age : undefined,
-        sex: cleanString(data.sex),
-        dateOfBirth: cleanString(data.dateOfBirth),
-        designation: cleanString(data.designation),
-        designationOther: cleanString(data.designationOther),
-        position: cleanString(data.position),
-        email: cleanString(data.email),
-        district: cleanString(data.district) || "N/A",
-        division: cleanString(data.division) || "N/A",
-        schoolYear: cleanString(data.schoolYear) || currentSchoolYear(),
-        yearsInService: cleanString(data.yearsInService),
-        highestEducationalAttainment: cleanString(data.highestEducationalAttainment),
-        fieldOfSpecialization: cleanString(data.fieldOfSpecialization),
-        fieldOfSpecializationOther: cleanString(data.fieldOfSpecializationOther),
-        currentGradeLevel: assignedGradeLevelName,
-        contactNumber: cleanString(data.contactNumber),
-        mostSubjectHandled: cleanString(data.mostSubjectHandled),
-        literacyTrainingAttended: cleanString(data.literacyTrainingAttended),
-        englishTrainingAttended: cleanString(data.englishTrainingAttended),
-        highestTrainingLevel: cleanString(data.highestTrainingLevel),
-        teacherId,
-        isComplete: true,
-        trainingsAttended,
-        readingTrainingsAttended,
-        englishTrainingsAttended,
-      },
-      { upsert: true, new: true }
-    ).lean();
-    await Teacher.findByIdAndUpdate(teacherId, { profileComplete: true });
+    const [profile] = await Promise.all([
+      TeacherProfile.findOneAndUpdate(
+        { teacherId },
+        {
+          name: cleanString(data.name),
+          age: typeof data.age === "number" ? data.age : undefined,
+          sex: cleanString(data.sex),
+          dateOfBirth: cleanString(data.dateOfBirth),
+          designation: cleanString(data.designation),
+          designationOther: cleanString(data.designationOther),
+          position: cleanString(data.position),
+          email: cleanString(data.email),
+          district: cleanString(data.district) || "N/A",
+          division: cleanString(data.division) || "N/A",
+          schoolYear: cleanString(data.schoolYear) || currentSchoolYear(),
+          yearsInService: cleanString(data.yearsInService),
+          highestEducationalAttainment: cleanString(data.highestEducationalAttainment),
+          fieldOfSpecialization: cleanString(data.fieldOfSpecialization),
+          fieldOfSpecializationOther: cleanString(data.fieldOfSpecializationOther),
+          currentGradeLevel: assignedGradeLevelName,
+          contactNumber: cleanString(data.contactNumber),
+          mostSubjectHandled: cleanString(data.mostSubjectHandled),
+          literacyTrainingAttended: cleanString(data.literacyTrainingAttended),
+          englishTrainingAttended: cleanString(data.englishTrainingAttended),
+          highestTrainingLevel: cleanString(data.highestTrainingLevel),
+          teacherId,
+          isComplete: true,
+          trainingsAttended,
+          readingTrainingsAttended,
+          englishTrainingsAttended,
+        },
+        { upsert: true, new: true }
+      ).lean(),
+      Teacher.findByIdAndUpdate(teacherId, { profileComplete: true }).lean(),
+    ]);
     res.json(formatTeacherProfile(profile, assignedGradeLevelName));
   } catch (err) {
     res.status(500).json({ error: "Server error" });

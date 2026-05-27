@@ -6,6 +6,7 @@ import {
   useGetTeacherProfile,
   useSaveTeacherProfile,
   getGetTeacherProfileQueryKey,
+  getGetMeQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -142,7 +143,11 @@ export default function TeacherProfile() {
       const savedProfile = await saveProfile.mutateAsync({ data: valuesToPayload(data) });
       form.reset(valuesFromProfile(savedProfile));
       queryClient.setQueryData(getGetTeacherProfileQueryKey(), savedProfile);
+      queryClient.setQueryData(getGetMeQueryKey(), (current: any) =>
+        current ? { ...current, profileComplete: true } : current,
+      );
       queryClient.invalidateQueries({ queryKey: getGetTeacherProfileQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       setIsEditing(false);
       toast({ title: "Profile saved", description: "Your profile has been updated successfully." });
     } catch (e: any) {

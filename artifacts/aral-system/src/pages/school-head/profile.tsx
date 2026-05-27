@@ -6,7 +6,8 @@ import { z } from "zod";
 import { 
   useGetSchoolHeadProfile, 
   useSaveSchoolHeadProfile,
-  getGetSchoolHeadProfileQueryKey
+  getGetSchoolHeadProfileQueryKey,
+  getGetMeQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -137,7 +138,11 @@ export default function SchoolHeadProfile() {
       const savedProfile = await saveProfile.mutateAsync({ data: valuesToPayload(data) });
       form.reset(valuesFromProfile(savedProfile));
       queryClient.setQueryData(getGetSchoolHeadProfileQueryKey(), savedProfile);
+      queryClient.setQueryData(getGetMeQueryKey(), (current: any) =>
+        current ? { ...current, profileComplete: true } : current,
+      );
       queryClient.invalidateQueries({ queryKey: getGetSchoolHeadProfileQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       setIsEditing(false);
       toast({
         title: "Profile saved",

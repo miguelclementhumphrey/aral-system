@@ -128,6 +128,8 @@ export default function AdminSchoolDetail() {
     );
   }
 
+  const schoolHeadProfileComplete = profileOverview?.schoolHead.profileComplete ?? school.profileComplete;
+
   const handleActivate = async () => {
     try {
       await activateSchool.mutateAsync({ schoolId });
@@ -239,7 +241,7 @@ export default function AdminSchoolDetail() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Profile Status</p>
-                <p className="text-base">{school.profileComplete ? "Complete" : "Incomplete"}</p>
+                <p className="text-base">{schoolHeadProfileComplete ? "Complete" : "Incomplete"}</p>
               </div>
             </div>
 

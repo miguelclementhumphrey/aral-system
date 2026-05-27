@@ -98,42 +98,43 @@ router.post("/profile", async (req: AuthRequest, res: Response) => {
     const readingTrainingsAttended = cleanStringArray(data.readingTrainingsAttended);
     const englishTrainingsAttended = cleanStringArray(data.englishTrainingsAttended);
     const trainingsAttended = uniqueStrings(data.trainingsAttended, readingTrainingsAttended, englishTrainingsAttended);
-    const isComplete = true;
-    const profile = await SchoolHeadProfile.findOneAndUpdate(
-      { schoolId },
-      {
-        $set: {
-          name: cleanString(data.name),
-          designation: cleanString(data.designation),
-          designationOther: cleanString(data.designationOther),
-          position: cleanString(data.position),
-          contactNumber: cleanString(data.contactNumber),
-          email: cleanString(data.email),
-          highestEducationalAttainment: cleanString(data.highestEducationalAttainment),
-          yearsInService: cleanString(data.yearsInService),
-          fieldOfSpecialization: cleanString(data.fieldOfSpecialization),
-          fieldOfSpecializationOther: cleanString(data.fieldOfSpecializationOther),
-          literacyTrainingAttended: cleanString(data.literacyTrainingAttended),
-          englishTrainingAttended: cleanString(data.englishTrainingAttended),
-          highestTrainingLevel: cleanString(data.highestTrainingLevel),
-          schoolId,
-          isComplete,
-          trainingsAttended,
-          readingTrainingsAttended,
-          englishTrainingsAttended,
+    const [profile] = await Promise.all([
+      SchoolHeadProfile.findOneAndUpdate(
+        { schoolId },
+        {
+          $set: {
+            name: cleanString(data.name),
+            designation: cleanString(data.designation),
+            designationOther: cleanString(data.designationOther),
+            position: cleanString(data.position),
+            contactNumber: cleanString(data.contactNumber),
+            email: cleanString(data.email),
+            highestEducationalAttainment: cleanString(data.highestEducationalAttainment),
+            yearsInService: cleanString(data.yearsInService),
+            fieldOfSpecialization: cleanString(data.fieldOfSpecialization),
+            fieldOfSpecializationOther: cleanString(data.fieldOfSpecializationOther),
+            literacyTrainingAttended: cleanString(data.literacyTrainingAttended),
+            englishTrainingAttended: cleanString(data.englishTrainingAttended),
+            highestTrainingLevel: cleanString(data.highestTrainingLevel),
+            schoolId,
+            isComplete: true,
+            trainingsAttended,
+            readingTrainingsAttended,
+            englishTrainingsAttended,
+          },
+          $unset: {
+            firstName: "",
+            middleName: "",
+            lastName: "",
+            district: "",
+            division: "",
+            schoolYear: "",
+          },
         },
-        $unset: {
-          firstName: "",
-          middleName: "",
-          lastName: "",
-          district: "",
-          division: "",
-          schoolYear: "",
-        },
-      },
-      { upsert: true, new: true }
-    ).lean();
-    await School.findByIdAndUpdate(schoolId, { profileComplete: true });
+        { upsert: true, new: true }
+      ).lean(),
+      School.findByIdAndUpdate(schoolId, { profileComplete: true }).lean(),
+    ]);
     res.json(formatSchoolHeadProfile(profile));
   } catch (err) {
     res.status(500).json({ error: "Server error" });
