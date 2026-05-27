@@ -11,6 +11,23 @@ const allowedOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:3000")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+function isAllowedOrigin(origin: string): boolean {
+  return allowedOrigins.some((allowedOrigin) => {
+    if (allowedOrigin === "*") return true;
+    if (allowedOrigin === origin) return true;
+
+    if (allowedOrigin.includes("*")) {
+      const pattern = `^${allowedOrigin
+        .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, ".*")}$`;
+      return new RegExp(pattern).test(origin);
+    }
+
+    return false;
+  });
+}
+
 const authRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 25 });
 const apiRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 600 });
 
@@ -38,7 +55,7 @@ app.use(
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }

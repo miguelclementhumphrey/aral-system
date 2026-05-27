@@ -43,7 +43,7 @@ const profileSchema = z.object({
   yearsInService: z.string().min(1, "Years in service is required"),
   fieldOfSpecialization: z.string().min(1, "Field of specialization is required"),
   fieldOfSpecializationOther: z.string().optional(),
-  currentGradeLevel: z.string().min(1, "Current grade level is required"),
+  currentGradeLevel: z.string().optional(),
   mostSubjectHandled: z.string().min(1, "Most subject handled is required"),
   literacyTrainingAttended: z.string().min(1, "Select yes or no"),
   readingTrainingsAttended: z.array(z.string()).default([]),
@@ -86,6 +86,7 @@ const valuesFromProfile = (profile: any): ProfileFormValues => ({
 const valuesToPayload = (data: ProfileFormValues) => ({
   ...data,
   name: data.name?.trim() || "",
+  currentGradeLevel: data.currentGradeLevel || "Assigned by School Head",
   district: "N/A",
   division: "N/A",
   schoolYear: currentSchoolYear(),
