@@ -15,7 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Setup token getter for Orval client
 setAuthTokenGetter(() => sessionStorage.getItem("aral_token"));
-setBaseUrl(import.meta.env.VITE_API_BASE_URL || null);
+setBaseUrl(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(sessionStorage.getItem("aral_token"));
