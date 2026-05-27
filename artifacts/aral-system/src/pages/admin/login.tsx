@@ -122,7 +122,13 @@ export default function AdminLogin() {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-sidebar-foreground/70 border-t border-sidebar-border pt-4 mt-2">
-            <a href="/login" className="text-primary hover:underline font-medium">Return to School Login</a>
+            <button
+              type="button"
+              onClick={() => setLocation("/login")}
+              className="font-medium text-primary hover:underline"
+            >
+              Return to School Login
+            </button>
           </CardFooter>
         </Card>
       </div>

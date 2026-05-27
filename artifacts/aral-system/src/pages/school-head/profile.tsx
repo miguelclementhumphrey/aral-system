@@ -146,9 +146,7 @@ export default function SchoolHeadProfile() {
       
       // If it was incomplete, redirect to dashboard as they are now unlocked
       if (!isProfileComplete) {
-        // Need to force reload the auth state to get new profileComplete flag,
-        // but for now we just redirect.
-        window.location.href = "/school-head/dashboard";
+        setLocation("/school-head/dashboard");
       }
     } catch (e: any) {
       toast({ title: "Failed to save", description: e.message, variant: "destructive" });

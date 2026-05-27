@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { AuthUser, AuthResponse, useGetMe, getGetMeQueryKey, setAuthTokenGetter } from "@workspace/api-client-react";
+import { AuthUser, AuthResponse, useGetMe, getGetMeQueryKey, setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
@@ -15,6 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Setup token getter for Orval client
 setAuthTokenGetter(() => sessionStorage.getItem("aral_token"));
+setBaseUrl(import.meta.env.VITE_API_BASE_URL || null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(sessionStorage.getItem("aral_token"));

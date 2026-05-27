@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useToast } from "@/hooks/use-toast";
 import { School, BookOpen } from "lucide-react";
+import { apiUrl } from "@/lib/api-url";
 
 const loginSchema = z.object({
   schoolId: z.string().min(1, "School is required"),
@@ -61,7 +62,7 @@ export default function Login() {
     form.setValue("teacherId", "");
     setTeachersLoading(true);
 
-    fetch(`/api/auth/schools/${selectedSchoolId}/teachers`, { signal: controller.signal })
+    fetch(apiUrl(`/api/auth/schools/${selectedSchoolId}/teachers`), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Unable to load teachers");
         return response.json() as Promise<Array<{ id: string; name: string }>>;
@@ -268,7 +269,14 @@ export default function Login() {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
-            Are you a Super Admin? &nbsp;<a href="/admin" className="text-primary hover:underline font-medium">Admin Login</a>
+            Are you a Super Admin?&nbsp;
+            <button
+              type="button"
+              onClick={() => setLocation("/admin")}
+              className="font-medium text-primary hover:underline"
+            >
+              Admin Login
+            </button>
           </CardFooter>
         </Card>
       </div>

@@ -32,6 +32,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Eye, EyeOff, MoreHorizontal, Plus, Search, Trash2, UserCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { apiUrl } from "@/lib/api-url";
 
 const createTeacherSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -147,7 +148,7 @@ export default function SchoolHeadTeachers() {
       setIsProfileOpen(true);
       setIsProfileLoading(true);
 
-      const response = await fetch(`/api/teachers/${teacher.id}/profile`, {
+      const response = await fetch(apiUrl(`/api/teachers/${teacher.id}/profile`), {
         headers: {
           Authorization: `Bearer ${sessionStorage.getItem("aral_token") ?? ""}`,
         },
@@ -171,7 +172,7 @@ export default function SchoolHeadTeachers() {
 
     try {
       setIsDeleting(true);
-      const response = await fetch(`/api/teachers/${teacherToDelete.id}`, {
+      const response = await fetch(apiUrl(`/api/teachers/${teacherToDelete.id}`), {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${sessionStorage.getItem("aral_token") ?? ""}`,
