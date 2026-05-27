@@ -143,7 +143,38 @@ router.get("/profile", authenticate, requireRole("teacher"), async (req: AuthReq
     if (!teacher) { res.status(404).json({ error: "Teacher not found" }); return; }
     const assignedGradeLevelName = await getAssignedGradeLevelName(teacher);
     const profile = await TeacherProfile.findOne({ teacherId: req.user!.teacherId }).lean();
-    if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+    if (!profile) {
+      res.json({
+        id: "",
+        teacherId: teacher._id.toString(),
+        name: null,
+        age: null,
+        sex: null,
+        dateOfBirth: null,
+        designation: "",
+        designationOther: null,
+        position: "",
+        email: "",
+        district: null,
+        division: null,
+        schoolYear: null,
+        yearsInService: "",
+        highestEducationalAttainment: "",
+        fieldOfSpecialization: "",
+        fieldOfSpecializationOther: null,
+        currentGradeLevel: assignedGradeLevelName,
+        contactNumber: "",
+        mostSubjectHandled: "",
+        trainingsAttended: [],
+        literacyTrainingAttended: null,
+        readingTrainingsAttended: [],
+        englishTrainingAttended: null,
+        englishTrainingsAttended: [],
+        highestTrainingLevel: null,
+        isComplete: false,
+      });
+      return;
+    }
     res.json(formatTeacherProfile(profile, assignedGradeLevelName));
   } catch (err) {
     res.status(500).json({ error: "Server error" });
